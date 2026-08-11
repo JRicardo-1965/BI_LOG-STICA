@@ -1,0 +1,159 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>BI Logística — Login</title>
+<style>
+  :root {
+    --bg: #f6f5f2;
+    --surface: #ffffff;
+    --border: #e0ddd4;
+    --text: #23211d;
+    --text-muted: #6b6960;
+    --brand-green: #08a538;
+    --danger: #d1382c;
+    --danger-soft: #fbe1de;
+    --sans: -apple-system, "Segoe UI", "Helvetica Neue", Arial, sans-serif;
+    --shadow: 0 1px 2px rgba(35,33,29,0.06), 0 8px 24px rgba(35,33,29,0.08);
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #171512;
+      --surface: #201d19;
+      --border: #3a3630;
+      --text: #ede9e2;
+      --text-muted: #b0aa9d;
+      --danger-soft: #3d1414;
+    }
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: var(--sans);
+    background: var(--bg);
+    color: var(--text);
+    padding: 20px;
+  }
+  .card {
+    width: 100%;
+    max-width: 340px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    box-shadow: var(--shadow);
+    padding: 28px 26px;
+  }
+  .eyebrow {
+    font-size: 11px;
+    letter-spacing: 0.09em;
+    text-transform: uppercase;
+    color: var(--brand-green);
+    font-weight: 700;
+    margin: 0 0 4px;
+  }
+  h1 { font-size: 18px; margin: 0 0 20px; }
+  label {
+    display: block;
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--text-muted);
+    font-weight: 700;
+    margin: 14px 0 4px;
+  }
+  input {
+    width: 100%;
+    font-family: var(--sans);
+    font-size: 14px;
+    padding: 9px 10px;
+    border-radius: 8px;
+    border: 1px solid var(--border);
+    background: var(--bg);
+    color: var(--text);
+  }
+  input:focus { outline: 2px solid var(--brand-green); outline-offset: 1px; }
+  button {
+    width: 100%;
+    margin-top: 20px;
+    font-family: var(--sans);
+    font-size: 14px;
+    font-weight: 700;
+    background: var(--brand-green);
+    color: #fff;
+    border: none;
+    padding: 10px;
+    border-radius: 8px;
+    cursor: pointer;
+  }
+  button:hover { opacity: 0.92; }
+  button:disabled { opacity: 0.6; cursor: default; }
+  .error {
+    margin-top: 14px;
+    padding: 8px 10px;
+    border-radius: 8px;
+    background: var(--danger-soft);
+    color: var(--danger);
+    font-size: 12.5px;
+    display: none;
+  }
+  .error.is-visible { display: block; }
+</style>
+</head>
+<body>
+  <form class="card" id="login-form">
+    <p class="eyebrow">Logística</p>
+    <h1>BI Logística</h1>
+    <label for="email">E-mail</label>
+    <input type="email" id="email" name="email" autocomplete="username" required />
+    <label for="senha">Senha</label>
+    <input type="password" id="senha" name="senha" autocomplete="current-password" required />
+    <button type="submit" id="submit-btn">Entrar</button>
+    <p class="error" id="error-msg"></p>
+  </form>
+
+  <script>
+    const form = document.getElementById('login-form');
+    const btn = document.getElementById('submit-btn');
+    const errorEl = document.getElementById('error-msg');
+
+    const params = new URLSearchParams(location.search);
+    if (params.get('desativado') === '1') {
+      errorEl.textContent = 'Sua sessão expirou ou seu acesso foi desativado. Faça login novamente.';
+      errorEl.classList.add('is-visible');
+    }
+
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      btn.disabled = true;
+      errorEl.classList.remove('is-visible');
+      try {
+        const res = await fetch('/api/login', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            email: document.getElementById('email').value,
+            senha: document.getElementById('senha').value
+          })
+        });
+        const data = await res.json();
+        if (res.ok && data.ok) {
+          location.href = '/';
+          return;
+        }
+        errorEl.textContent = data.error || 'Não foi possível entrar.';
+        errorEl.classList.add('is-visible');
+      } catch (err) {
+        errorEl.textContent = 'Erro de conexão. Tente novamente.';
+        errorEl.classList.add('is-visible');
+      } finally {
+        btn.disabled = false;
+      }
+    });
+  </script>
+</body>
+</html>
