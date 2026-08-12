@@ -86,7 +86,8 @@ function filterResumoPedidos(resumo, allowed) {
   };
   return {
     Hoje: filtrarBloco(resumo && resumo.Hoje),
-    Mes: filtrarBloco(resumo && resumo.Mes)
+    Mes: filtrarBloco(resumo && resumo.Mes),
+    Projecao: filtrarBloco(resumo && resumo.Projecao)
   };
 }
 
@@ -186,7 +187,7 @@ app.post('/api/sync', express.json({ limit: '25mb' }), async (req, res) => {
       metaSegmento: body.metaSegmento || [],
       metaProduto: body.metaProduto || [],
       pedidos: body.pedidos || [],
-      pedidosResumo: body.pedidosResumo || { Hoje: { PorEmpresa: [] }, Mes: { PorEmpresa: [] } },
+      pedidosResumo: body.pedidosResumo || { Hoje: { PorEmpresa: [] }, Mes: { PorEmpresa: [] }, Projecao: { PorEmpresa: [] } },
       meta: body.meta || {},
       usuarios,
       usuariosEmpresas: (body.usuariosEmpresas || []).map((v) => ({ email: v.email, empresa: String(v.empresa) })),

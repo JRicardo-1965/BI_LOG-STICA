@@ -223,6 +223,34 @@
   .kpi.kpi-static.k-warning .num { color: var(--warning); }
   .kpi.kpi-readonly { cursor: default; }
   .kpi.kpi-readonly:hover { transform: none; border-color: var(--border); }
+  .kpi.kpi-clickable { cursor: pointer; }
+  .kpi.kpi-clickable:hover { transform: translateY(-1px); border-color: var(--accent); }
+  .kpi.kpi-clickable:hover .kpi-click-icon { border-color: var(--accent); color: var(--accent); }
+  .kpi.kpi-clickable:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+  .ped-cliente-link {
+    color: var(--accent);
+    cursor: pointer;
+    text-decoration: underline;
+    text-decoration-style: dotted;
+    text-underline-offset: 2px;
+  }
+  .ped-cliente-link:hover { color: var(--accent-strong); }
+  .kpi-click-icon {
+    position: absolute;
+    top: 6px;
+    right: 6px;
+    width: 16px;
+    height: 16px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 4px;
+    border: 1px solid var(--border);
+    background: var(--surface-2);
+    color: var(--text-faint);
+    font-size: 9px;
+    pointer-events: none;
+  }
   .kpis-6 { grid-template-columns: repeat(6, 1fr); }
   .kpis-4 { grid-template-columns: repeat(4, 1fr); }
   .kpi-ranking-btn {
@@ -1441,22 +1469,36 @@
     </div>
 
     <div id="tab-content-pedidos" class="is-hidden">
-    <div class="kpis kpis-4" id="kpis-pedidos">
-      <div class="kpi kpi-static" id="kpi-fat-dia" tabindex="0" role="button" aria-pressed="false" title="Clique para ver por filial">
+    <div class="kpis kpis-6" id="kpis-pedidos">
+      <div class="kpi kpi-static kpi-clickable" id="kpi-fat-dia" tabindex="0" role="button" aria-pressed="false" title="Clique para ver por filial">
+        <span class="kpi-click-icon" aria-hidden="true">⤢</span>
         <div class="num" id="total-fat-dia">–</div>
         <div class="lbl">Faturamento do dia</div>
       </div>
-      <div class="kpi kpi-static" id="kpi-fat-mes" tabindex="0" role="button" aria-pressed="false" title="Clique para ver por filial">
+      <div class="kpi kpi-static kpi-clickable" id="kpi-fat-mes" tabindex="0" role="button" aria-pressed="false" title="Clique para ver por filial">
+        <span class="kpi-click-icon" aria-hidden="true">⤢</span>
         <div class="num" id="total-fat-mes">–</div>
         <div class="lbl">Faturamento do mês corrente</div>
       </div>
-      <div class="kpi kpi-static" id="kpi-prod-dia" tabindex="0" role="button" aria-pressed="false" title="Clique para ver por filial">
+      <div class="kpi kpi-static kpi-clickable" id="kpi-prod-dia" tabindex="0" role="button" aria-pressed="false" title="Clique para ver por filial">
+        <span class="kpi-click-icon" aria-hidden="true">⤢</span>
         <div class="num" id="total-prod-dia">–</div>
         <div class="lbl">Produtos vendidos no dia</div>
       </div>
-      <div class="kpi kpi-static" id="kpi-prod-mes" tabindex="0" role="button" aria-pressed="false" title="Clique para ver por filial">
+      <div class="kpi kpi-static kpi-clickable" id="kpi-prod-mes" tabindex="0" role="button" aria-pressed="false" title="Clique para ver por filial">
+        <span class="kpi-click-icon" aria-hidden="true">⤢</span>
         <div class="num" id="total-prod-mes">–</div>
         <div class="lbl">Produtos vendidos no mês</div>
+      </div>
+      <div class="kpi kpi-static kpi-clickable" id="kpi-fat-projecao" tabindex="0" role="button" aria-pressed="false" title="Clique para ver por filial">
+        <span class="kpi-click-icon" aria-hidden="true">⤢</span>
+        <div class="num" id="total-fat-projecao">–</div>
+        <div class="lbl">Projeção de faturamento mensal</div>
+      </div>
+      <div class="kpi kpi-static kpi-clickable" id="kpi-prod-projecao" tabindex="0" role="button" aria-pressed="false" title="Clique para ver por filial">
+        <span class="kpi-click-icon" aria-hidden="true">⤢</span>
+        <div class="num" id="total-prod-projecao">–</div>
+        <div class="lbl">Projeção de quantidade de vendas mensal</div>
       </div>
     </div>
     <div class="panel">
@@ -1490,6 +1532,7 @@
             <tr>
               <th data-key="Empresa"><button>Empresa <span class="sort-arrow"></span></button></th>
               <th data-key="Pedido"><button>Pedido <span class="sort-arrow"></span></button></th>
+              <th data-key="Cliente"><button>Cliente <span class="sort-arrow"></span></button></th>
               <th data-key="Vendedor"><button>Vendedor <span class="sort-arrow"></span></button></th>
               <th data-key="DataDigitacao"><button>Digitado em <span class="sort-arrow"></span></button></th>
               <th data-key="DataProcessamento"><button>Processado em <span class="sort-arrow"></span></button></th>
@@ -1506,7 +1549,9 @@
         Faturamento e produtos vendidos vêm das SAÍDAS reais (<code>003_SAIDA_POR_VENDAS</code>), não da fila de pedidos &middot;
         Pedidos <b>PENDENTES</b> (qualquer situação diferente de PROCESSADO, vindos de <code>CONSULTA_PEDIDOS_A_PROCESSAR</code>) ficam sempre no topo da lista, em destaque, independente do filtro de período escolhido &middot;
         Tempo = intervalo entre a digitação e o processamento do pedido &middot; pedidos pendentes mostram há quanto tempo estão em aberto desde a digitação &middot;
-        Clique nos cards acima para ver o detalhamento por filial.
+        Projeção mensal = ritmo do mês em curso (faturamento/produtos até hoje ÷ dia do mês) projetado para os dias totais do mês &middot;
+        Clique nos cards acima (⤢) para ver o detalhamento por filial &middot;
+        Clique no nome do cliente para ver os itens do pedido e os dados do cliente (segmento, situação, cidade).
       </div>
     </div>
     </div>
@@ -1582,6 +1627,22 @@
     <p class="local-update-pct" id="local-update-pct">0%</p>
     <div class="modal-close-row">
       <button class="modal-close-btn" id="local-update-close-btn" type="button" disabled>Fechar</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-overlay is-hidden" id="pedido-cliente-modal">
+  <div class="modal-card modal-card-wide is-compact" role="dialog" aria-modal="true" aria-labelledby="pedido-cliente-title">
+    <h2 id="pedido-cliente-title">Cliente</h2>
+    <p class="modal-sub" id="pedido-cliente-sub"></p>
+    <div class="cliente-section-title">Pedido</div>
+    <table class="modal-table" id="pedido-cliente-info-table"></table>
+    <div class="cliente-section-title">Itens do pedido</div>
+    <div class="cliente-table-wrap">
+      <table class="modal-table" id="pedido-cliente-itens-table"></table>
+    </div>
+    <div class="modal-close-row">
+      <button class="modal-close-btn" id="pedido-cliente-close-btn" type="button">Fechar</button>
     </div>
   </div>
 </div>
@@ -3374,6 +3435,8 @@ render();
   document.getElementById("total-fat-mes").textContent = fmtMoney(resumo.Mes.Faturamento);
   document.getElementById("total-prod-dia").textContent = fmtNum(resumo.Hoje.Produtos);
   document.getElementById("total-prod-mes").textContent = fmtNum(resumo.Mes.Produtos);
+  document.getElementById("total-fat-projecao").textContent = fmtMoney(resumo.Projecao.Faturamento);
+  document.getElementById("total-prod-projecao").textContent = fmtNum(resumo.Projecao.Produtos);
 
   // modal de detalhamento por filial - reaproveitado pelos 4 cards, cada um so muda o titulo/dado
   const bdModal = document.getElementById("filial-breakdown-modal");
@@ -3401,7 +3464,9 @@ render();
     "kpi-fat-dia": () => abrirBreakdown("Faturamento do dia por filial", resumo.Hoje.PorEmpresa, "Faturamento", fmtMoney),
     "kpi-fat-mes": () => abrirBreakdown("Faturamento do mês por filial", resumo.Mes.PorEmpresa, "Faturamento", fmtMoney),
     "kpi-prod-dia": () => abrirBreakdown("Produtos vendidos no dia por filial", resumo.Hoje.PorEmpresa, "Produtos", (v) => fmtNum(v)),
-    "kpi-prod-mes": () => abrirBreakdown("Produtos vendidos no mês por filial", resumo.Mes.PorEmpresa, "Produtos", (v) => fmtNum(v))
+    "kpi-prod-mes": () => abrirBreakdown("Produtos vendidos no mês por filial", resumo.Mes.PorEmpresa, "Produtos", (v) => fmtNum(v)),
+    "kpi-fat-projecao": () => abrirBreakdown("Projeção de faturamento mensal por filial", resumo.Projecao.PorEmpresa, "Faturamento", fmtMoney),
+    "kpi-prod-projecao": () => abrirBreakdown("Projeção de quantidade de vendas mensal por filial", resumo.Projecao.PorEmpresa, "Produtos", (v) => fmtNum(v))
   };
   for (const id in kpiCards) {
     const el = document.getElementById(id);
@@ -3481,9 +3546,13 @@ render();
       const tempoTxt = p.Pendente
         ? (p.TempoAbertoMin !== null ? `⏳ em aberto há ${fmtTempo(p.TempoAbertoMin)}` : "—")
         : fmtTempo(p.TempoProcessamentoMin);
+      const clienteTxt = p.Cliente
+        ? `<span class="ped-cliente-link" data-empresa="${p.CodEmpresa}" data-pedido="${p.Pedido}">${p.Cliente}</span>`
+        : "—";
       tr.innerHTML = `
         <td>${empresaBadgeHtml(p.Empresa)}</td>
         <td class="num-cell">${p.Pedido}</td>
+        <td>${clienteTxt}</td>
         <td>${p.Vendedor || "—"}</td>
         <td>${digitadoTxt}</td>
         <td>${processadoTxt}</td>
@@ -3527,14 +3596,70 @@ render();
   });
 
   document.getElementById("copy-ped-btn").addEventListener("click", () => {
-    const headers = ["Empresa", "Pedido", "Vendedor", "Digitado em", "Hora Digitação", "Processado em", "Hora Processamento", "Tempo (min)", "Situação"];
+    const headers = ["Empresa", "Pedido", "Cliente", "Vendedor", "Digitado em", "Hora Digitação", "Processado em", "Hora Processamento", "Tempo (min)", "Situação"];
     const rowsOut = lastRenderedRows.map(p => [
-      p.Empresa, p.Pedido, p.Vendedor || "", p.DataDigitacao || "", p.HoraDigitacao || "",
+      p.Empresa, p.Pedido, p.Cliente || "", p.Vendedor || "", p.DataDigitacao || "", p.HoraDigitacao || "",
       p.DataProcessamento || "", p.HoraProcessamento || "",
       p.Pendente ? p.TempoAbertoMin : p.TempoProcessamentoMin,
       p.Pendente ? "PENDENTE" : "PROCESSADO"
     ]);
     copyToExcel(headers, rowsOut, document.getElementById("copy-ped-status"));
+  });
+
+  // popup de cliente + itens do pedido, ao clicar no nome do cliente na tabela (so existe quando
+  // o pedido tem vinculo achado em VENDAS_CLIENTES - ver CodcCliente/Cliente/Itens no extract_bi.ps1)
+  const pcModal = document.getElementById("pedido-cliente-modal");
+  const pcTitle = document.getElementById("pedido-cliente-title");
+  const pcSub = document.getElementById("pedido-cliente-sub");
+  const pcInfoTable = document.getElementById("pedido-cliente-info-table");
+  const pcItensTable = document.getElementById("pedido-cliente-itens-table");
+  const pcCloseBtn = document.getElementById("pedido-cliente-close-btn");
+
+  function abrirPedidoCliente(codEmpresa, pedidoNum) {
+    const p = RAW_PEDIDOS.find(x => String(x.CodEmpresa) === String(codEmpresa) && String(x.Pedido) === String(pedidoNum));
+    if (!p) return;
+    const clienteFull = RAW_CLIENTES.find(c => String(c.CodEmpresa) === String(p.CodEmpresa) && String(c.CodcCliente) === String(p.CodcCliente));
+
+    pcTitle.textContent = p.Cliente || "Cliente";
+    pcSub.innerHTML = clienteFull
+      ? `${empresaBadgeHtml(p.Empresa)} ${p.Empresa}${segmentoTagHtml(clienteFull.Segmento)}${situacaoBadgeHtml(clienteFull.Situacao)}${cidadeUfHtml(clienteFull.Cidade, clienteFull.UF)}`
+      : `${empresaBadgeHtml(p.Empresa)} ${p.Empresa}`;
+
+    const tempoTxt = p.Pendente
+      ? (p.TempoAbertoMin !== null ? `⏳ em aberto há ${fmtTempo(p.TempoAbertoMin)}` : "—")
+      : fmtTempo(p.TempoProcessamentoMin);
+    pcInfoTable.innerHTML = `
+      <tr><td>Pedido</td><td>${p.Pedido}</td></tr>
+      <tr><td>Situação</td><td><span class="chip ${p.Pendente ? "c-danger" : "c-ok"}">${p.Pendente ? "PENDENTE" : "PROCESSADO"}</span></td></tr>
+      <tr><td>Vendedor</td><td>${p.Vendedor || "—"}</td></tr>
+      <tr><td>Digitado em</td><td>${p.DataDigitacao ? fmtDate(p.DataDigitacao) + " " + (p.HoraDigitacao || "") : "—"}</td></tr>
+      <tr><td>Processado em</td><td>${p.DataProcessamento ? fmtDate(p.DataProcessamento) + " " + (p.HoraProcessamento || "") : "—"}</td></tr>
+      <tr><td>Tempo</td><td>${tempoTxt}</td></tr>
+    `;
+
+    if (!p.Itens || !p.Itens.length) {
+      pcItensTable.innerHTML = `<tr><td style="text-align:center;color:var(--text-muted);padding:10px 0;">Sem itens vinculados a este pedido.</td></tr>`;
+    } else {
+      const header = `<tr style="font-size:9.5px;text-transform:uppercase;letter-spacing:0.04em;color:var(--text-muted);">
+        <td style="border-bottom:1px solid var(--border);">Produto</td>
+        <td class="num-cell" style="border-bottom:1px solid var(--border);">Qtd</td>
+        <td style="border-bottom:1px solid var(--border);">Total</td>
+      </tr>`;
+      const linhas = p.Itens.map(it => `<tr><td>${it.Produto}</td><td class="num-cell">${fmtNum(it.Qte)}</td><td>${fmtMoney(it.Total)}</td></tr>`).join("");
+      pcItensTable.innerHTML = header + linhas;
+    }
+
+    pcModal.classList.remove("is-hidden");
+  }
+  function fecharPedidoCliente() { pcModal.classList.add("is-hidden"); }
+  pcCloseBtn.addEventListener("click", fecharPedidoCliente);
+  pcModal.addEventListener("click", (e) => { if (e.target === pcModal) fecharPedidoCliente(); });
+  document.addEventListener("keydown", (e) => { if (e.key === "Escape" && !pcModal.classList.contains("is-hidden")) fecharPedidoCliente(); });
+
+  tbody.addEventListener("click", (e) => {
+    const link = e.target.closest(".ped-cliente-link");
+    if (!link) return;
+    abrirPedidoCliente(link.dataset.empresa, link.dataset.pedido);
   });
 
   window.renderPedidos = render;
