@@ -3488,7 +3488,7 @@ render();
     pedEmpresa.appendChild(opt);
   }
 
-  let sortKey = null; // null = ordem natural (pendentes primeiro, depois mais recentes)
+  let sortKey = null; // null = ordem natural (Situação: pendentes primeiro -> Filial -> Pedido desc)
   let sortDir = 1;
   let lastRenderedRows = [];
 
@@ -3527,10 +3527,13 @@ render();
         return (av - bv) * sortDir;
       });
     } else {
+      // ordem padrao pedida pelo usuario: Situação (PENDENTE primeiro) -> Filial -> Pedido
+      // (descendente) - mesma regra dentro de PENDENTE e dentro de PROCESSADO.
       rows.sort((a, b) => {
         if (a.Pendente !== b.Pendente) return a.Pendente ? -1 : 1;
-        if (a.Pendente) return (b.TempoAbertoMin || 0) - (a.TempoAbertoMin || 0);
-        return (b.DataPedido || "").localeCompare(a.DataPedido || "");
+        const empresaCompare = (a.Empresa || "").localeCompare(b.Empresa || "", "pt-BR");
+        if (empresaCompare !== 0) return empresaCompare;
+        return (b.Pedido || 0) - (a.Pedido || 0);
       });
     }
 
@@ -3575,7 +3578,8 @@ render();
     btn.addEventListener("click", () => {
       const key = btn.parentElement.dataset.key;
       if (key === "_tempoOrdenacao") {
-        sortKey = null; // ordem natural ja e por tempo (mais antigo primeiro entre os pendentes)
+        sortKey = null; // "Tempo" nao tem campo unico pra ordenar (pendente x processado usam campos
+        // diferentes) - clicar nesse cabecalho so volta pra ordem padrao (Situação -> Filial -> Pedido)
       } else if (sortKey === key) {
         sortDir *= -1;
       } else {
