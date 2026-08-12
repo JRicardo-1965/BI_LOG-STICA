@@ -3642,7 +3642,10 @@ render();
     `;
 
     if (!p.Itens || !p.Itens.length) {
-      pcItensTable.innerHTML = `<tr><td style="text-align:center;color:var(--text-muted);padding:10px 0;">Sem itens vinculados a este pedido.</td></tr>`;
+      const msg = p.Pendente
+        ? "Pedido ainda não processado — os itens só ficam disponíveis depois que o pedido vira venda."
+        : "Sem itens vinculados a este pedido.";
+      pcItensTable.innerHTML = `<tr><td style="text-align:center;color:var(--text-muted);padding:10px 0;">${msg}</td></tr>`;
     } else {
       const header = `<tr style="font-size:9.5px;text-transform:uppercase;letter-spacing:0.04em;color:var(--text-muted);">
         <td style="border-bottom:1px solid var(--border);">Produto</td>
