@@ -70,6 +70,26 @@ function filterByEmpresas(arr, allowed) {
   return arr.filter((row) => allowed.includes(String(row.CodEmpresa)));
 }
 
+// recalcula os totais Hoje/Mes a partir de PorEmpresa ja filtrado - nao usa o total global vindo do
+// sync, senao um usuario restrito veria faturamento de empresa que ele nao tem permissao pra ver
+// embutido na soma total (mesmo sem ver a linha detalhada).
+function filterResumoPedidos(resumo, allowed) {
+  const filtrarBloco = (bloco) => {
+    const porEmpresa = filterByEmpresas((bloco && bloco.PorEmpresa) || [], allowed);
+    const faturamento = porEmpresa.reduce((sum, e) => sum + (e.Faturamento || 0), 0);
+    const produtos = porEmpresa.reduce((sum, e) => sum + (e.Produtos || 0), 0);
+    return {
+      Faturamento: Math.round(faturamento * 100) / 100,
+      Produtos: Math.round(produtos * 100) / 100,
+      PorEmpresa: porEmpresa
+    };
+  };
+  return {
+    Hoje: filtrarBloco(resumo && resumo.Hoje),
+    Mes: filtrarBloco(resumo && resumo.Mes)
+  };
+}
+
 function empresasDoUsuario(email) {
   if (!latestData) return [];
   const alvo = String(email).toLowerCase();
@@ -165,6 +185,8 @@ app.post('/api/sync', express.json({ limit: '25mb' }), async (req, res) => {
       metas: body.metas || [],
       metaSegmento: body.metaSegmento || [],
       metaProduto: body.metaProduto || [],
+      pedidos: body.pedidos || [],
+      pedidosResumo: body.pedidosResumo || { Hoje: { PorEmpresa: [] }, Mes: { PorEmpresa: [] } },
       meta: body.meta || {},
       usuarios,
       usuariosEmpresas: (body.usuariosEmpresas || []).map((v) => ({ email: v.email, empresa: String(v.empresa) })),
@@ -200,6 +222,8 @@ app.get('/', requireAuth, (req, res) => {
   const metas = filterByEmpresas(latestData.metas, allowed);
   const metaSegmento = filterByEmpresas(latestData.metaSegmento, allowed);
   const metaProduto = filterByEmpresas(latestData.metaProduto, allowed);
+  const pedidos = filterByEmpresas(latestData.pedidos, allowed);
+  const pedidosResumo = filterResumoPedidos(latestData.pedidosResumo, allowed);
   const meta = latestData.meta || {};
 
   const html = TEMPLATE
@@ -212,6 +236,8 @@ app.get('/', requireAuth, (req, res) => {
     .replaceAll('__METAS_JSON__', jsonForScript(metas))
     .replaceAll('__META_SEGMENTO_JSON__', jsonForScript(metaSegmento))
     .replaceAll('__META_PRODUTO_JSON__', jsonForScript(metaProduto))
+    .replaceAll('__PEDIDOS_JSON__', jsonForScript(pedidos))
+    .replaceAll('__PEDIDOS_RESUMO_JSON__', jsonForScript(pedidosResumo))
     .replaceAll('__TODAY_ISO__', meta.TodayISO || new Date().toISOString().slice(0, 10))
     .replaceAll('__PERIODO_TEXTO__', meta.PeriodoTexto || '')
     .replaceAll('__FONTE_ATUALIZADA_EM__', meta.FonteAtualizadaEm || 'desconhecido')
