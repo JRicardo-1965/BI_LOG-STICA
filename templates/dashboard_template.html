@@ -120,30 +120,21 @@
   }
   .brand-block { display: flex; align-items: center; gap: 14px; }
   .brand-logo { height: 42px; width: auto; display: block; flex-shrink: 0; }
-  .eyebrow {
-    font-size: 11px;
-    letter-spacing: 0.09em;
-    text-transform: uppercase;
-    color: var(--brand-green);
-    font-weight: 700;
-    margin: 0 0 3px;
-  }
-  h1 {
-    font-size: 20px;
+  .brand-name {
+    font-size: 27px;
     margin: 0;
     letter-spacing: -0.01em;
-    text-wrap: balance;
-    font-weight: 700;
+    font-weight: 800;
     color: #fff;
+    line-height: 1;
   }
-  .meta {
+  .tab-context-note {
     font-size: 11.5px;
-    color: rgba(255,255,255,0.55);
-    text-align: right;
-    line-height: 1.4;
-    max-width: 380px;
+    color: var(--text-muted);
+    line-height: 1.5;
+    margin: 0 0 12px;
   }
-  .meta b { color: #fff; font-variant-numeric: tabular-nums; }
+  .tab-context-note b { color: var(--text); font-variant-numeric: tabular-nums; }
   .version-tag {
     display: inline-block;
     font-family: var(--mono);
@@ -678,7 +669,6 @@
   @media (max-width: 860px) {
     .kpis { grid-template-columns: repeat(2, 1fr); }
     .header { flex-direction: column; align-items: flex-start; }
-    .meta { text-align: left; }
     .header-right { flex-direction: column-reverse; align-items: flex-start; }
   }
 
@@ -988,22 +978,18 @@
     <div class="header">
       <div class="brand-block">
         <img src="__LOGO_DATA_URI__" alt="Aqui Tem Mais" class="brand-logo" />
-        <div>
-          <p class="eyebrow">Ressuprimento</p>
-          <h1>BI de Estoque &amp; Ponto de Ressuprimento</h1>
-        </div>
+        <h1 class="brand-name">Logística</h1>
       </div>
       <div class="header-right">
-        <div class="meta">
-          Período analisado: <b>__PERIODO_TEXTO__</b>
-          <span class="version-tag" title="Corresponde à Version exibida no menu de versões do Artifact — sobe a cada publicação, inclusive as automáticas">Version __VERSION__</span>
-          <span class="version-tag" title="Número de release: só muda quando uma funcionalidade ou visual novo é lançado">Release __RELEASE__</span><br>
-          Consumo médio calculado sobre este período · parâmetros de ressuprimento ajustáveis abaixo
-        </div>
+        <span class="version-tag" title="Corresponde à Version exibida no menu de versões do Artifact — sobe a cada publicação, inclusive as automáticas">Version __VERSION__</span>
+        <span class="version-tag" title="Número de release: só muda quando uma funcionalidade ou visual novo é lançado">Release __RELEASE__</span>
         <span class="update-badge" id="update-badge" title="Última vez que a rotina de atualização rodou com sucesso">
           <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>
           Dados de <b>__FONTE_ATUALIZADA_EM__</b> <span id="freshness-age"></span>
         </span>
+        <button id="refresh-page-btn" class="icon-btn" type="button" title="Atualizar a página (recarrega com os últimos dados publicados)">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 12a9 9 0 1 1-2.64-6.36"/><path d="M21 3v6h-6"/></svg>
+        </button>
         <button id="local-update-btn" class="local-update-trigger-btn is-hidden" type="button" title="Atualizar dados agora (extrai do Access e reconstrói o dashboard) — disponível só rodando local">🔄 Atualizar dados</button>
         <span class="local-update-trigger-btn is-hidden" id="hosted-user-badge" title="Usuário logado"></span>
         <button id="hosted-logout-btn" class="local-update-trigger-btn is-hidden" type="button">Sair</button>
@@ -1027,6 +1013,9 @@
     </div>
 
     <div id="tab-content-estoque">
+    <p class="tab-context-note">
+      <b>BI de Estoque &amp; Ponto de Ressuprimento</b> · Período analisado: <b>__PERIODO_TEXTO__</b> · Consumo médio calculado sobre este período · parâmetros de ressuprimento ajustáveis abaixo.
+    </p>
     <div class="kpis" id="kpis">
       <div class="kpi k-danger" id="kpi-danger" tabindex="0" role="button" aria-pressed="false">
         <div class="num" id="count-danger">–</div>
@@ -2163,6 +2152,15 @@ render();
     root.setAttribute("data-theme", next);
     try { localStorage.setItem(STORAGE_KEY, next); } catch (e) {}
     paintButton(next);
+  });
+})();
+
+(function initRefreshButton() {
+  const btn = document.getElementById("refresh-page-btn");
+  if (!btn) return;
+  btn.addEventListener("click", () => {
+    btn.disabled = true;
+    location.reload();
   });
 })();
 
