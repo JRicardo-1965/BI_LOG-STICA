@@ -332,7 +332,18 @@
     text-overflow: ellipsis;
   }
   .ruptura-th-cliente { background: var(--surface-2); color: var(--text-muted); font-size: 9.5px; text-transform: uppercase; letter-spacing: 0.04em; }
-  .ruptura-td-cliente { background: var(--surface); font-weight: 600; }
+  .ruptura-td-cliente {
+    background: var(--surface);
+    font-weight: 600;
+  }
+  .ruptura-table td.ruptura-td-cliente {
+    white-space: normal;
+    overflow: visible;
+    text-overflow: clip;
+    word-break: break-word;
+    line-height: 1.3;
+    vertical-align: middle;
+  }
   .ruptura-empresa-tag {
     display: inline-block;
     font-weight: 700;
