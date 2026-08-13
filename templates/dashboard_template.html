@@ -3118,6 +3118,7 @@ render();
   // dentro desse conjunto, em computeCCMetrics().
   const ccBase = RAW_CLIENTES.map(c => ({
     CodEmpresa: String(c.CodEmpresa),
+    CodcCliente: c.CodcCliente,
     Empresa: c.Empresa,
     Cliente: c.Cliente,
     Cidade: c.Cidade,
@@ -3149,6 +3150,7 @@ render();
 
     return {
       CodEmpresa: c.CodEmpresa,
+      CodcCliente: c.CodcCliente,
       Empresa: c.Empresa,
       Cliente: c.Cliente,
       Cidade: c.Cidade,
@@ -3292,7 +3294,7 @@ render();
       const pctMetaTxt = r.PctMeta === null ? "—" : `${fmtNum(r.PctMeta, 1)}%`;
       tr.innerHTML = `
         <td>${empresaBadgeHtml(r.Empresa)}</td>
-        <td class="produto-name" title="${r.Cliente}">${r.Cliente}${cidadeUfHtml(r.Cidade, r.UF)}${segmentoTagHtml(r.Segmento)}${situacaoBadgeHtml(r.Situacao)}</td>
+        <td class="produto-name" title="${r.Cliente}"><span class="ped-cliente-link" data-empresa="${r.CodEmpresa}" data-cliente="${r.CodcCliente}">${r.Cliente}</span>${cidadeUfHtml(r.Cidade, r.UF)}${segmentoTagHtml(r.Segmento)}${situacaoBadgeHtml(r.Situacao)}</td>
         <td class="num-cell">${fmtNum(r.ConsumoMensal)}</td>
         <td class="num-cell">${fmtNum(r.Tendencia)}</td>
         <td class="num-cell">${fmtNum(r.Media3Meses)}</td>
@@ -3358,6 +3360,18 @@ render();
       r.VariacaoPct, r.MetaSegmento, r.PctMeta, CC_STATUS_LABEL[r._statusBucket]
     ]);
     copyToExcel(headers, rowsOut, document.getElementById("copy-cc-status"));
+  });
+
+  // clique no nome do cliente abre o mesmo popup de detalhe usado na aba Clientes (cards de 12
+  // meses, gráfico, produtos comprados/não comprados) - travado em "todo o período" (acumulado),
+  // nunca no mês corrente nem no filtro de período de outra aba, a pedido explícito do usuário.
+  tbody.addEventListener("click", (e) => {
+    const link = e.target.closest(".ped-cliente-link");
+    if (!link) return;
+    const codEmpresa = link.dataset.empresa;
+    const codcCliente = link.dataset.cliente;
+    const clienteFull = RAW_CLIENTES.find(c => String(c.CodEmpresa) === codEmpresa && String(c.CodcCliente) === codcCliente);
+    if (clienteFull && window.abrirClienteNoPeriodo) window.abrirClienteNoPeriodo(clienteFull, "");
   });
 
   window.renderConsumoCliente = render;
