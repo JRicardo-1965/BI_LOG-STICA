@@ -788,6 +788,7 @@
     transition: width 0.35s ease;
   }
   .local-update-bar-fill.is-error { background: var(--danger); }
+  .local-update-bar-fill.is-warning { background: var(--status-warning); }
   .local-update-pct { font-size: 11px; color: var(--text-muted); margin: 0 0 12px; text-align: right; }
   .modal-table { width: 100%; min-width: 0; border-collapse: collapse; font-size: 12px; }
   .modal-table td { padding: 6px 0; border-bottom: 1px solid var(--border); }
@@ -3513,9 +3514,10 @@ render();
   function closeModal() { modal.classList.add("is-hidden"); }
   closeBtn.addEventListener("click", closeModal);
 
-  function setBar(percent, etapa, isError) {
+  function setBar(percent, etapa, variant) {
     fillEl.style.width = `${Math.max(0, Math.min(100, percent))}%`;
-    fillEl.classList.toggle("is-error", !!isError);
+    fillEl.classList.toggle("is-error", variant === "error");
+    fillEl.classList.toggle("is-warning", variant === "warning");
     pctEl.textContent = `${Math.round(percent)}%`;
     etapaEl.textContent = etapa;
   }
@@ -3525,7 +3527,7 @@ render();
   }
 
   function onFalha(msg) {
-    setBar(0, msg, true);
+    setBar(0, msg, "error");
     closeBtn.disabled = false;
     btn.disabled = false;
     stopPolling();
@@ -3539,11 +3541,19 @@ render();
         onFalha(data.etapa || "Erro na atualização.");
         return;
       }
-      setBar(data.percent || 0, data.etapa || "Processando...", false);
+      setBar(data.percent || 0, data.etapa || "Processando...", "");
       if (data.status === "concluido") {
         stopPolling();
-        setBar(100, "Concluído! Recarregando...", false);
+        setBar(100, "Concluído! Recarregando...", "");
         setTimeout(() => location.reload(), 900);
+      }
+      if (data.status === "concluido_sem_sync") {
+        // dados locais ok, mas o envio ao Render falhou - mostra o aviso por mais tempo antes de
+        // recarregar (a pagina local ja tem os dados novos; so o hospedado ficou pra tras).
+        stopPolling();
+        setBar(100, data.etapa || "Dados locais atualizados, mas a sincronização com o Render falhou.", "warning");
+        closeBtn.disabled = false;
+        setTimeout(() => location.reload(), 3500);
       }
     } catch (err) {
       onFalha("Não foi possível falar com o servidor local.");
