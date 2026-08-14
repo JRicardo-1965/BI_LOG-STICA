@@ -189,6 +189,7 @@ app.post('/api/sync', express.json({ limit: '25mb' }), async (req, res) => {
       pedidos: body.pedidos || [],
       pedidosResumo: body.pedidosResumo || { Hoje: { PorEmpresa: [] }, Mes: { PorEmpresa: [] }, Projecao: { PorEmpresa: [] } },
       comparativo: body.comparativo || [],
+      comparativoTotais: body.comparativoTotais || [],
       meta: body.meta || {},
       usuarios,
       usuariosEmpresas: (body.usuariosEmpresas || []).map((v) => ({ email: v.email, empresa: String(v.empresa) })),
@@ -227,6 +228,7 @@ app.get('/', requireAuth, (req, res) => {
   const pedidos = filterByEmpresas(latestData.pedidos, allowed);
   const pedidosResumo = filterResumoPedidos(latestData.pedidosResumo, allowed);
   const comparativo = filterByEmpresas(latestData.comparativo, allowed);
+  const comparativoTotais = filterByEmpresas(latestData.comparativoTotais, allowed);
   const meta = latestData.meta || {};
 
   const html = TEMPLATE
@@ -242,6 +244,7 @@ app.get('/', requireAuth, (req, res) => {
     .replaceAll('__PEDIDOS_JSON__', jsonForScript(pedidos))
     .replaceAll('__PEDIDOS_RESUMO_JSON__', jsonForScript(pedidosResumo))
     .replaceAll('__COMPARATIVO_JSON__', jsonForScript(comparativo))
+    .replaceAll('__COMPARATIVO_TOTAIS_JSON__', jsonForScript(comparativoTotais))
     .replaceAll('__TODAY_ISO__', meta.TodayISO || new Date().toISOString().slice(0, 10))
     .replaceAll('__PERIODO_TEXTO__', meta.PeriodoTexto || '')
     .replaceAll('__FONTE_ATUALIZADA_EM__', meta.FonteAtualizadaEm || 'desconhecido')

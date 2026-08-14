@@ -925,12 +925,56 @@
   .cmp-metric-btn:hover { border-color: var(--accent); color: var(--accent); }
   .cmp-metric-btn.is-active { background: var(--accent); border-color: var(--accent); color: #fff; }
   .cmp-metric-btn:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+  .cmp-chart-row {
+    display: flex;
+    gap: 12px;
+    align-items: stretch;
+    padding: 0 12px;
+  }
   .cmp-chart-wrap {
-    padding: 14px 12px 4px;
+    padding: 14px 0 4px;
     height: 300px;
+    flex: 1;
+    min-width: 0;
   }
   .cmp-chart-wrap svg { display: block; width: 100%; height: 100%; }
   .cmp-point:hover + circle { r: 4; }
+  .cmp-summary-cards {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    width: 210px;
+    flex-shrink: 0;
+    padding: 14px 0 4px;
+    overflow-y: auto;
+  }
+  .cmp-summary-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-left: 3px solid var(--card-color, var(--accent));
+    border-radius: 8px;
+    padding: 8px 10px;
+    box-shadow: var(--shadow);
+  }
+  .cmp-summary-card-title {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 11px;
+    font-weight: 700;
+    color: var(--text);
+    margin-bottom: 6px;
+  }
+  .cmp-summary-card-swatch { width: 9px; height: 9px; border-radius: 3px; flex-shrink: 0; background: var(--card-color); }
+  .cmp-summary-row { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; font-size: 11px; padding: 2px 0; }
+  .cmp-summary-row .lbl { color: var(--text-muted); }
+  .cmp-summary-row .val { font-family: var(--mono); font-weight: 700; font-variant-numeric: tabular-nums; white-space: nowrap; }
+  .cmp-summary-empty { font-size: 11px; color: var(--text-faint); font-style: italic; padding: 14px 0; }
+  @media (max-width: 760px) {
+    .cmp-chart-row { flex-direction: column; }
+    .cmp-summary-cards { width: 100%; flex-direction: row; flex-wrap: wrap; overflow-y: visible; }
+    .cmp-summary-card { flex: 1 1 150px; }
+  }
   .cmp-legend {
     display: flex;
     gap: 16px;
@@ -1672,18 +1716,22 @@
 
       <div class="cmp-metric-toggle" id="cmp-metric-toggle">
         <button type="button" class="cmp-metric-btn is-active" data-metric="clientes">👥 Clientes únicos</button>
-        <button type="button" class="cmp-metric-btn" data-metric="vendas">🧾 Quantidade de vendas</button>
+        <button type="button" class="cmp-metric-btn" data-metric="vendas">🧾 Nr. Total de Pedidos</button>
+        <button type="button" class="cmp-metric-btn" data-metric="itens">📦 Itens vendidos</button>
         <button type="button" class="cmp-metric-btn" data-metric="financeiro">💰 Financeiro</button>
       </div>
 
-      <div class="cmp-chart-wrap" id="cmp-chart-wrap">
-        <div id="cmp-chart"></div>
+      <div class="cmp-chart-row">
+        <div class="cmp-chart-wrap" id="cmp-chart-wrap">
+          <div id="cmp-chart"></div>
+        </div>
+        <div class="cmp-summary-cards" id="cmp-summary-cards"></div>
       </div>
       <div class="cmp-legend" id="cmp-legend"></div>
 
       <div class="footnote">
         Cada linha é um período (Ano/Mês) selecionado acima, alinhado por dia do mês para comparar diretamente &middot;
-        Clique num ponto do gráfico para ver o detalhamento daquele dia em todos os períodos comparados, nas 3 métricas &middot;
+        Clique num ponto do gráfico para ver o detalhamento daquele dia em todos os períodos comparados, nas 4 métricas &middot;
         Segmento é atributo do cliente (não da venda) &middot; dados dos últimos 24 meses (<code>VENDAS_CLIENTES</code>), excluindo FRETE.
       </div>
     </div>
@@ -1851,6 +1899,7 @@ const RAW_META_PRODUTO = __META_PRODUTO_JSON__;
 const RAW_PEDIDOS = __PEDIDOS_JSON__;
 const RAW_PEDIDOS_RESUMO = __PEDIDOS_RESUMO_JSON__;
 const RAW_COMPARATIVO = __COMPARATIVO_JSON__;
+const RAW_COMPARATIVO_TOTAIS = __COMPARATIVO_TOTAIS_JSON__;
 
 // Preenchidos só pelo backend hospedado (Render) a cada login, sessão a sessão — o build.js do
 // Artifact público e do dashboard local sempre substitui os dois por string vazia, então o bloco
@@ -3885,6 +3934,17 @@ render();
   ];
   const chartEl = document.getElementById("cmp-chart");
   const legendEl = document.getElementById("cmp-legend");
+  const summaryCardsEl = document.getElementById("cmp-summary-cards");
+
+  // Clientes unicos de um PERIODO INTEIRO nao pode vir de somar o dia-a-dia (um cliente comprando
+  // em 2 dias diferentes do mes seria contado 2x) - usa a agregacao separada (sem dimensao Dia) que
+  // ja vem certa do extract_bi.ps1.
+  function clientesUnicosPeriodoCmp(anoMes, empresaVal, segmentoVal) {
+    let rows = RAW_COMPARATIVO_TOTAIS.filter(r => r.AnoMes === anoMes);
+    if (empresaVal) rows = rows.filter(r => String(r.CodEmpresa) === empresaVal);
+    if (segmentoVal) rows = rows.filter(r => r.Segmento === segmentoVal);
+    return rows.reduce((sum, r) => sum + (r.ClientesUnicosPeriodo || 0), 0);
+  }
 
   const empresasCmp = [...new Set(RAW_COMPARATIVO.map(r => String(r.CodEmpresa)))]
     .map(cod => ({ cod, nome: empresaNomeMapCmp.get(cod) || `Empresa ${cod}` }))
@@ -3941,16 +4001,16 @@ render();
       const valor = (maxValor / gridLevels) * i;
       const y = yFor(valor);
       gridSvg += `<line x1="${padLeft}" y1="${y.toFixed(1)}" x2="${W - padRight}" y2="${y.toFixed(1)}" style="stroke:var(--border)" stroke-width="1" />`;
-      gridSvg += `<text x="${padLeft - 8}" y="${(y + 3).toFixed(1)}" font-size="9" text-anchor="end" style="fill:var(--text-faint)">${metricFmt(valor)}</text>`;
+      gridSvg += `<text x="${padLeft - 8}" y="${(y + 3).toFixed(1)}" font-size="10.5" font-weight="700" text-anchor="end" style="fill:var(--text)">${metricFmt(valor)}</text>`;
     }
 
     const passo = maxDia > 20 ? 5 : 2;
     let xAxisSvg = "";
     for (let d = 1; d <= maxDia; d += passo) {
-      xAxisSvg += `<text x="${xFor(d).toFixed(1)}" y="${H - 8}" font-size="9" text-anchor="middle" style="fill:var(--text-faint)">${d}</text>`;
+      xAxisSvg += `<text x="${xFor(d).toFixed(1)}" y="${H - 8}" font-size="10.5" font-weight="700" text-anchor="middle" style="fill:var(--text)">${d}</text>`;
     }
     if ((maxDia - 1) % passo !== 0) {
-      xAxisSvg += `<text x="${xFor(maxDia).toFixed(1)}" y="${H - 8}" font-size="9" text-anchor="middle" style="fill:var(--text-faint)">${maxDia}</text>`;
+      xAxisSvg += `<text x="${xFor(maxDia).toFixed(1)}" y="${H - 8}" font-size="10.5" font-weight="700" text-anchor="middle" style="fill:var(--text)">${maxDia}</text>`;
     }
 
     // com muitas linhas ativas, rotular todo ponto de todo dia polui o grafico -
@@ -3976,7 +4036,7 @@ render();
       `).join("");
       labelsSvg += pts.filter((pt, i) => i % labelStep === 0 || i === pts.length - 1).map(pt => {
         const ly = Math.max(9, pt.y - 8 - (idx % 2) * 10);
-        return `<text x="${pt.x.toFixed(1)}" y="${ly.toFixed(1)}" font-size="8" text-anchor="middle" style="fill:${p.color};font-weight:600;pointer-events:none">${metricFmt(pt.valor)}</text>`;
+        return `<text x="${pt.x.toFixed(1)}" y="${ly.toFixed(1)}" font-size="9" text-anchor="middle" style="fill:${p.color};font-weight:700;pointer-events:none">${metricFmt(pt.valor)}</text>`;
       }).join("");
     });
 
@@ -4000,26 +4060,39 @@ render();
 
     const periodosAtivos = periodosEscolhidos.map((anoMes, idx) => {
       const porDia = new Map();
+      let totFaturamento = 0, totQtdVendas = 0, totItens = 0;
       for (const row of filtrado) {
         if (row.AnoMes !== anoMes) continue;
-        if (!porDia.has(row.Dia)) porDia.set(row.Dia, { Faturamento: 0, QtdVendas: 0, ClientesUnicos: 0 });
+        if (!porDia.has(row.Dia)) porDia.set(row.Dia, { Faturamento: 0, QtdVendas: 0, ClientesUnicos: 0, ItensVendidos: 0 });
         const acc = porDia.get(row.Dia);
         acc.Faturamento += row.Faturamento;
         acc.QtdVendas += row.QtdVendas;
         acc.ClientesUnicos += row.ClientesUnicos;
+        acc.ItensVendidos += row.ItensVendidos || 0;
+        // Faturamento/Pedidos/Itens sao seguros de somar entre dias (cada venda pertence a 1 dia so).
+        totFaturamento += row.Faturamento;
+        totQtdVendas += row.QtdVendas;
+        totItens += row.ItensVendidos || 0;
       }
       return {
         anoMes,
         label: periodoLabelCmp(anoMes),
         color: CMP_COLORS[idx % CMP_COLORS.length],
         diasNoMes: diasNoMesCmp(anoMes),
-        porDia
+        porDia,
+        totais: {
+          Faturamento: totFaturamento,
+          QtdVendas: totQtdVendas,
+          ItensVendidos: totItens,
+          // este sim NAO pode ser somado dia-a-dia - vem da agregacao dedicada de periodo inteiro.
+          ClientesUnicos: clientesUnicosPeriodoCmp(anoMes, empresaVal, segmentoVal)
+        }
       };
     });
 
     periodosAtivosAtual = periodosAtivos;
 
-    const metricKey = { clientes: "ClientesUnicos", vendas: "QtdVendas", financeiro: "Faturamento" }[metricAtual];
+    const metricKey = { clientes: "ClientesUnicos", vendas: "QtdVendas", itens: "ItensVendidos", financeiro: "Faturamento" }[metricAtual];
     const metricFmt = metricAtual === "financeiro" ? fmtMoneyCompactCmp : (v) => fmtNum(v);
 
     chartEl.innerHTML = buildChartSvg(periodosAtivos, metricKey, metricFmt);
@@ -4027,6 +4100,18 @@ render();
     legendEl.innerHTML = periodosAtivos.length
       ? periodosAtivos.map(p => `<span class="cmp-legend-item"><span class="cmp-legend-swatch" style="background:${p.color}"></span>${p.label}</span>`).join("")
       : `<span class="cmp-legend-empty">Selecione ao menos um período nos filtros acima.</span>`;
+
+    summaryCardsEl.innerHTML = periodosAtivos.length
+      ? periodosAtivos.map(p => `
+          <div class="cmp-summary-card" style="--card-color:${p.color}">
+            <div class="cmp-summary-card-title"><span class="cmp-summary-card-swatch"></span>${p.label}</div>
+            <div class="cmp-summary-row"><span class="lbl">👥 Clientes únicos</span><span class="val">${fmtNum(p.totais.ClientesUnicos)}</span></div>
+            <div class="cmp-summary-row"><span class="lbl">🧾 Nr. Pedidos</span><span class="val">${fmtNum(p.totais.QtdVendas)}</span></div>
+            <div class="cmp-summary-row"><span class="lbl">📦 Itens vendidos</span><span class="val">${fmtNum(p.totais.ItensVendidos)}</span></div>
+            <div class="cmp-summary-row"><span class="lbl">💰 Total vendido</span><span class="val">${fmtMoney(p.totais.Faturamento)}</span></div>
+          </div>
+        `).join("")
+      : `<div class="cmp-summary-empty">Selecione ao menos um período para ver os totais de cada um aqui ao lado.</div>`;
   }
 
   function abrirDetalheDiaCmp(dia) {
@@ -4039,19 +4124,21 @@ render();
     const header = `<tr style="font-size:9.5px;text-transform:uppercase;letter-spacing:0.04em;color:var(--text-muted);">
       <td style="border-bottom:1px solid var(--border);">Período</td>
       <td class="num-cell" style="border-bottom:1px solid var(--border);">Financeiro</td>
-      <td class="num-cell" style="border-bottom:1px solid var(--border);">Vendas</td>
+      <td class="num-cell" style="border-bottom:1px solid var(--border);">Pedidos</td>
+      <td class="num-cell" style="border-bottom:1px solid var(--border);">Itens</td>
       <td class="num-cell" style="border-bottom:1px solid var(--border);">Clientes</td>
     </tr>`;
     const linhas = periodosAtivosAtual.map(p => {
-      const v = p.porDia.get(dia) || { Faturamento: 0, QtdVendas: 0, ClientesUnicos: 0 };
+      const v = p.porDia.get(dia) || { Faturamento: 0, QtdVendas: 0, ClientesUnicos: 0, ItensVendidos: 0 };
       return `<tr>
         <td><span class="cmp-legend-swatch" style="background:${p.color};margin-right:6px;"></span>${p.label}</td>
         <td class="num-cell">${fmtMoney(v.Faturamento)}</td>
         <td class="num-cell">${fmtNum(v.QtdVendas)}</td>
+        <td class="num-cell">${fmtNum(v.ItensVendidos || 0)}</td>
         <td class="num-cell">${fmtNum(v.ClientesUnicos)}</td>
       </tr>`;
     }).join("");
-    document.getElementById("cmp-dia-table").innerHTML = header + (linhas || `<tr><td colspan="4" style="text-align:center;color:var(--text-muted);padding:10px 0;">Sem dados.</td></tr>`);
+    document.getElementById("cmp-dia-table").innerHTML = header + (linhas || `<tr><td colspan="5" style="text-align:center;color:var(--text-muted);padding:10px 0;">Sem dados.</td></tr>`);
     modal.classList.remove("is-hidden");
   }
 
