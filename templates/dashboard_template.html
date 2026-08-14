@@ -3915,7 +3915,7 @@ render();
     if (!periodosAtivos.length) {
       return `<div class="ranking-empty">Escolha pelo menos um período acima para comparar.</div>`;
     }
-    const W = 900, H = 300, padTop = 14, padBottom = 26, padLeft = 54, padRight = 14;
+    const W = 900, H = 300, padTop = 30, padBottom = 26, padLeft = 54, padRight = 14;
     const plotW = W - padLeft - padRight;
     const plotH = H - padTop - padBottom;
     const maxDia = Math.max(...periodosAtivos.map(p => p.diasNoMes));
@@ -3943,25 +3943,37 @@ render();
       xAxisSvg += `<text x="${xFor(maxDia).toFixed(1)}" y="${H - 8}" font-size="9" text-anchor="middle" style="fill:var(--text-faint)">${maxDia}</text>`;
     }
 
+    // com muitas linhas ativas, rotular todo ponto de todo dia polui o grafico -
+    // reduz a densidade de rotulos conforme o numero de periodos ativos (mesmo
+    // ritmo dos ticks do eixo X quando ha 3+ periodos), escalonando a altura
+    // dos rotulos por serie para evitar que se sobreponham no mesmo dia.
+    const labelStep = periodosAtivos.length >= 3 ? passo : (periodosAtivos.length === 2 ? Math.max(1, Math.round(passo / 2)) : 1);
+
     let linesSvg = "";
     let pointsSvg = "";
-    periodosAtivos.forEach((p) => {
+    let labelsSvg = "";
+    periodosAtivos.forEach((p, idx) => {
       const dias = Array.from({ length: p.diasNoMes }, (_, i) => i + 1);
       const pts = dias.map(d => {
         const v = p.porDia.get(d);
-        return { x: xFor(d), y: yFor(v ? (v[metricKey] || 0) : 0), dia: d };
+        return { x: xFor(d), y: yFor(v ? (v[metricKey] || 0) : 0), dia: d, valor: v ? (v[metricKey] || 0) : 0 };
       });
       const pathD = pts.map((pt, i) => (i === 0 ? "M" : "L") + pt.x.toFixed(1) + "," + pt.y.toFixed(1)).join(" ");
       linesSvg += `<path d="${pathD}" style="fill:none;stroke:${p.color};stroke-width:2.2" />`;
       pointsSvg += pts.map(pt => `
-        <circle class="cmp-point" cx="${pt.x.toFixed(1)}" cy="${pt.y.toFixed(1)}" r="8" fill="transparent" data-dia="${pt.dia}" style="cursor:pointer"><title>Dia ${pt.dia} — clique para detalhar</title></circle>
+        <circle class="cmp-point" cx="${pt.x.toFixed(1)}" cy="${pt.y.toFixed(1)}" r="8" fill="transparent" data-dia="${pt.dia}" style="cursor:pointer"><title>Dia ${pt.dia} — ${p.label}: ${metricFmt(pt.valor)} — clique para detalhar</title></circle>
         <circle cx="${pt.x.toFixed(1)}" cy="${pt.y.toFixed(1)}" r="2.6" style="fill:${p.color};pointer-events:none" />
       `).join("");
+      labelsSvg += pts.filter((pt, i) => i % labelStep === 0 || i === pts.length - 1).map(pt => {
+        const ly = Math.max(9, pt.y - 8 - (idx % 2) * 10);
+        return `<text x="${pt.x.toFixed(1)}" y="${ly.toFixed(1)}" font-size="8" text-anchor="middle" style="fill:${p.color};font-weight:600;pointer-events:none">${metricFmt(pt.valor)}</text>`;
+      }).join("");
     });
 
     return `<svg viewBox="0 0 ${W} ${H}" style="width:100%;height:100%;overflow:visible">
       ${gridSvg}
       ${linesSvg}
+      ${labelsSvg}
       ${pointsSvg}
       ${xAxisSvg}
     </svg>`;
