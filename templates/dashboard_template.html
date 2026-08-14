@@ -479,7 +479,7 @@
   }
   .field { display: flex; flex-direction: column; gap: 2px; }
   .field label { font-size: 10px; text-transform: uppercase; letter-spacing: 0.06em; color: var(--text-faint); font-weight: 700; }
-  select, input[type="search"] {
+  select, input[type="search"], input[type="number"] {
     font-family: var(--sans);
     font-size: 12px;
     padding: 5px 8px;
@@ -490,6 +490,7 @@
     min-width: 140px;
   }
   input[type="search"] { min-width: 180px; }
+  #cmp-dia-limite { min-width: 0; width: 72px; }
   select:focus, input:focus { outline: 2px solid var(--accent); outline-offset: 1px; }
   .spacer { flex: 1; }
   .result-count { font-size: 11px; color: var(--text-muted); white-space: nowrap; }
@@ -1712,6 +1713,10 @@
           <label for="cmp-periodo-4">Período 4</label>
           <select id="cmp-periodo-4"><option value="">Nenhum</option></select>
         </div>
+        <div class="field">
+          <label for="cmp-dia-limite">Limitar até o dia</label>
+          <input type="number" id="cmp-dia-limite" min="1" max="31" step="1" placeholder="Mês inteiro" title="Compara só até esse dia do mês em todos os períodos ativos - útil pra comparar um mês em andamento com meses já fechados de forma justa" />
+        </div>
       </div>
 
       <div class="cmp-metric-toggle" id="cmp-metric-toggle">
@@ -1732,7 +1737,7 @@
       <div class="footnote">
         Cada linha é um período (Ano/Mês) selecionado acima, alinhado por dia do mês para comparar diretamente &middot;
         Clique num ponto do gráfico para ver o detalhamento daquele dia em todos os períodos comparados, nas 4 métricas &middot;
-        Segmento é atributo do cliente (não da venda) &middot; dados dos últimos 24 meses (<code>VENDAS_CLIENTES</code>), excluindo FRETE.
+        Segmento é atributo do cliente (não da venda) &middot; "Limitar até o dia" corta todos os períodos ativos no mesmo dia do mês, útil pra comparar um mês em andamento com meses já fechados sem viés (some sozinho quando o período mais recente é o mês atual) &middot; dados dos últimos 24 meses (<code>VENDAS_CLIENTES</code>), excluindo FRETE.
       </div>
     </div>
     </div>
@@ -3932,18 +3937,21 @@ render();
     document.getElementById("cmp-periodo-3"),
     document.getElementById("cmp-periodo-4")
   ];
+  const cmpDiaLimiteInput = document.getElementById("cmp-dia-limite");
   const chartEl = document.getElementById("cmp-chart");
   const legendEl = document.getElementById("cmp-legend");
   const summaryCardsEl = document.getElementById("cmp-summary-cards");
 
-  // Clientes unicos de um PERIODO INTEIRO nao pode vir de somar o dia-a-dia (um cliente comprando
-  // em 2 dias diferentes do mes seria contado 2x) - usa a agregacao separada (sem dimensao Dia) que
-  // ja vem certa do extract_bi.ps1.
-  function clientesUnicosPeriodoCmp(anoMes, empresaVal, segmentoVal) {
+  // Clientes unicos ATE UM DIA D (ou do mes inteiro, se limiteDia for null) nao pode vir de somar
+  // o dia-a-dia (um cliente comprando em 2 dias diferentes do periodo seria contado 2x). RAW_COMPARATIVO_TOTAIS
+  // e um histograma "quantos clientes tiveram sua PRIMEIRA compra em cada dia" (por AnoMes+Empresa+Segmento) -
+  // somando as barras de Dia <= D reconstroi a contagem distinta correta ate qualquer corte de dia.
+  function clientesUnicosPeriodoCmp(anoMes, empresaVal, segmentoVal, limiteDia) {
     let rows = RAW_COMPARATIVO_TOTAIS.filter(r => r.AnoMes === anoMes);
     if (empresaVal) rows = rows.filter(r => String(r.CodEmpresa) === empresaVal);
     if (segmentoVal) rows = rows.filter(r => r.Segmento === segmentoVal);
-    return rows.reduce((sum, r) => sum + (r.ClientesUnicosPeriodo || 0), 0);
+    if (limiteDia) rows = rows.filter(r => r.Dia <= limiteDia);
+    return rows.reduce((sum, r) => sum + (r.NovosClientes || 0), 0);
   }
 
   const empresasCmp = [...new Set(RAW_COMPARATIVO.map(r => String(r.CodEmpresa)))]
@@ -3977,6 +3985,14 @@ render();
   // padrao: mes atual vs mes anterior - comparacao ja util sem precisar configurar nada
   if (anoMesesCmp[0]) periodoSelects[0].value = anoMesesCmp[0];
   if (anoMesesCmp[1]) periodoSelects[1].value = anoMesesCmp[1];
+
+  // se o periodo mais recente selecionado por padrao E o mes atual (ainda em andamento), a
+  // comparacao contra um mes ja fechado fica injusta (mes atual sempre "perde" so por ter menos
+  // dias corridos) - defaulta o limite de dia pro dia de hoje, ja empatando a contagem de dias.
+  // Continua totalmente editavel/limpavel pelo usuario.
+  if (anoMesesCmp[0] === TODAY_ISO_STR.slice(0, 7)) {
+    cmpDiaLimiteInput.value = today.getDate();
+  }
 
   let metricAtual = "clientes";
   let periodosAtivosAtual = [];
@@ -4053,10 +4069,16 @@ render();
     const empresaVal = cmpEmpresaSel.value;
     const segmentoVal = cmpSegmentoSel.value;
     const periodosEscolhidos = periodoSelects.map(s => s.value).filter(Boolean);
+    // corte de dia opcional (ex: "ate o dia 14"), aplicado igual pra todo periodo ativo - pra
+    // comparar um mes em andamento com meses ja fechados de forma justa (mesma quantidade de
+    // dias corridos dos dois lados), em vez do mes em andamento sempre "perder" so por ter menos dias.
+    const limiteDiaRaw = parseInt(cmpDiaLimiteInput.value, 10);
+    const limiteDia = (Number.isFinite(limiteDiaRaw) && limiteDiaRaw >= 1) ? limiteDiaRaw : null;
 
     let filtrado = RAW_COMPARATIVO;
     if (empresaVal) filtrado = filtrado.filter(r => String(r.CodEmpresa) === empresaVal);
     if (segmentoVal) filtrado = filtrado.filter(r => r.Segmento === segmentoVal);
+    if (limiteDia) filtrado = filtrado.filter(r => r.Dia <= limiteDia);
 
     const periodosAtivos = periodosEscolhidos.map((anoMes, idx) => {
       const porDia = new Map();
@@ -4074,18 +4096,21 @@ render();
         totQtdVendas += row.QtdVendas;
         totItens += row.ItensVendidos || 0;
       }
+      const diasNoMesReal = diasNoMesCmp(anoMes);
       return {
         anoMes,
         label: periodoLabelCmp(anoMes),
         color: CMP_COLORS[idx % CMP_COLORS.length],
-        diasNoMes: diasNoMesCmp(anoMes),
+        // corta o eixo/linha no limite escolhido (nunca alem do total de dias reais do mes) -
+        // assim um mes mais curto (fev, por ex.) nao ganha uma "cauda" artificial de zeros.
+        diasNoMes: limiteDia ? Math.min(diasNoMesReal, limiteDia) : diasNoMesReal,
         porDia,
         totais: {
           Faturamento: totFaturamento,
           QtdVendas: totQtdVendas,
           ItensVendidos: totItens,
-          // este sim NAO pode ser somado dia-a-dia - vem da agregacao dedicada de periodo inteiro.
-          ClientesUnicos: clientesUnicosPeriodoCmp(anoMes, empresaVal, segmentoVal)
+          // este sim NAO pode ser somado dia-a-dia - vem do histograma de primeira-compra-por-dia.
+          ClientesUnicos: clientesUnicosPeriodoCmp(anoMes, empresaVal, segmentoVal, limiteDia)
         }
       };
     });
@@ -4165,6 +4190,7 @@ render();
   cmpEmpresaSel.addEventListener("change", render);
   cmpSegmentoSel.addEventListener("change", render);
   for (const sel of periodoSelects) sel.addEventListener("change", render);
+  cmpDiaLimiteInput.addEventListener("input", render);
 
   window.renderComparar = render;
 })();
