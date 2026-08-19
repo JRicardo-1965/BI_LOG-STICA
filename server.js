@@ -22,11 +22,20 @@ const rateLimit = require('express-rate-limit');
 const PORT = process.env.PORT || 3000;
 const SESSION_SECRET = process.env.SESSION_SECRET;
 const SYNC_SECRET = process.env.SYNC_SECRET;
+// SSO_SHARED_SECRET habilita o login único vindo do Portal BI (rota /sso, ver mais abaixo) -
+// DIFERENTE do SESSION_SECRET (nunca reaproveita segredo de sessão como segredo de handoff
+// entre sistemas). Fica opcional no boot de propósito (não entra no exit(1) abaixo): assim
+// dá pra fazer o deploy desta mudança sem quebrar o site em produção antes da env var existir
+// no Render - a rota /sso só fica ativa quando SSO_SHARED_SECRET estiver configurado.
+const SSO_SHARED_SECRET = process.env.SSO_SHARED_SECRET;
 const IS_PROD = process.env.NODE_ENV === 'production';
 
 if (!SESSION_SECRET || !SYNC_SECRET) {
   console.error('ERRO: defina as variáveis de ambiente SESSION_SECRET e SYNC_SECRET antes de iniciar.');
   process.exit(1);
+}
+if (!SSO_SHARED_SECRET) {
+  console.warn('Aviso: SSO_SHARED_SECRET não definido — login único via Portal BI (rota /sso) fica desativado até configurar.');
 }
 
 const DATA_FILE = path.join(__dirname, 'data', 'data.json');
@@ -162,6 +171,39 @@ app.post('/api/login', express.json(), loginLimiter, async (req, res) => {
 app.post('/api/logout', (req, res) => {
   res.clearCookie('session');
   res.json({ ok: true });
+});
+
+// --- login único (handoff vindo do Portal BI) ---------------------------------
+//
+// O Portal (outro serviço, outro domínio) já validou a senha e decidiu que este e-mail pode
+// entrar aqui. Ele manda um token assinado de curtíssima duração (60s) em vez de senha - esta
+// rota só confere a assinatura/validade/sistema e cria a MESMA sessão de sempre (idêntica à
+// que /api/login cria), sem pedir senha de novo. Continua revalidando usuário ativo + empresas
+// a cada request normalmente (requireAuth/usuarioAtivo abaixo, inalterados).
+app.get('/sso', (req, res) => {
+  if (!SSO_SHARED_SECRET) return res.status(503).send('Login único não está configurado neste servidor ainda.');
+  const token = String(req.query.token || '');
+  if (!token) return res.redirect('/login');
+
+  let payload;
+  try {
+    payload = jwt.verify(token, SSO_SHARED_SECRET);
+  } catch (err) {
+    return res.redirect('/login?erro=sso_invalido');
+  }
+  if (payload.sistema !== 'LOGISTICA') return res.redirect('/login?erro=sso_sistema');
+
+  const usuario = usuarioAtivo(payload.email);
+  if (!usuario) return res.redirect('/login?desativado=1');
+
+  const sessionToken = jwt.sign({ email: usuario.email }, SESSION_SECRET, { expiresIn: '12h' });
+  res.cookie('session', sessionToken, {
+    httpOnly: true,
+    secure: IS_PROD,
+    sameSite: 'lax',
+    maxAge: 12 * 60 * 60 * 1000
+  });
+  res.redirect('/');
 });
 
 // --- sincronização (só o extract_bi.ps1 / local_server.js do Ricardo chama isso) -------------
