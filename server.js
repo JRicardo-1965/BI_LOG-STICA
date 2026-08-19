@@ -28,6 +28,9 @@ const SYNC_SECRET = process.env.SYNC_SECRET;
 // dá pra fazer o deploy desta mudança sem quebrar o site em produção antes da env var existir
 // no Render - a rota /sso só fica ativa quando SSO_SHARED_SECRET estiver configurado.
 const SSO_SHARED_SECRET = process.env.SSO_SHARED_SECRET;
+// URL do Portal BI (login único) - pra onde /login redireciona agora, em vez de servir o
+// login.html local. Configurável por env var, com um valor padrão sensato.
+const PORTAL_URL = process.env.PORTAL_URL || 'https://bi-portal-hyxm.onrender.com';
 const IS_PROD = process.env.NODE_ENV === 'production';
 
 if (!SESSION_SECRET || !SYNC_SECRET) {
@@ -251,8 +254,12 @@ app.post('/api/sync', express.json({ limit: '25mb' }), async (req, res) => {
 
 // --- páginas -----------------------------------------------------------------
 
+// Login direto fica desativado de propósito - todo mundo entra pelo Portal BI agora
+// (login único centralizado). Preserva a query string (?desativado=1 etc.) porque o
+// login.html do Portal já sabe interpretar os mesmos parâmetros.
 app.get('/login', (req, res) => {
-  res.sendFile(path.join(__dirname, 'public', 'login.html'));
+  const qs = req.url.includes('?') ? req.url.slice(req.url.indexOf('?')) : '';
+  res.redirect(`${PORTAL_URL}/login${qs}`);
 });
 
 app.get('/', requireAuth, (req, res) => {
