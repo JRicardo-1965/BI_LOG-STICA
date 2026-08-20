@@ -1101,7 +1101,9 @@
     <div class="tab-nav">
       <button class="tab-btn is-active" id="tab-btn-estoque" type="button" data-tab="estoque">Estoque &amp; Ressuprimento</button>
       <button class="tab-btn" id="tab-btn-meta" type="button" data-tab="meta">Ressuprimento (Meta)</button>
+      <button class="tab-btn" id="tab-btn-giro" type="button" data-tab="giro">Giro &amp; Estoque</button>
       <button class="tab-btn" id="tab-btn-pedidos" type="button" data-tab="pedidos">Faturamento &amp; Pedidos</button>
+      <button class="tab-btn" id="tab-btn-transferencias" type="button" data-tab="transferencias">Transferências</button>
     </div>
 
     <div id="tab-content-estoque">
@@ -1294,7 +1296,9 @@
               <th data-key="TotalMeta"><button>Total<br>Meta <span class="sort-arrow"></span></button></th>
               <th data-key="TotalMetaMaisX"><button>Meta<br><span id="th-meta-maisx-pct">+80%</span> <span class="sort-arrow"></span></button></th>
               <th data-key="ConsumoMensal"><button>Consumo<br>Mensal <span class="sort-arrow"></span></button></th>
+              <th data-key="_pctAtingido"><button>% Meta<br>Atingido <span class="sort-arrow"></span></button></th>
               <th data-key="TendenciaConsumo"><button>Tendência<br>Consumo <span class="sort-arrow"></span></button></th>
+              <th data-key="_pctProjetado"><button>% Meta<br>Projetado <span class="sort-arrow"></span></button></th>
               <th data-key="EstoqueAtual"><button>Estoque <span class="sort-arrow"></span></button></th>
               <th>Nível<br>Mín→Máx</th>
               <th data-key="EstoqueSeguranca_Minimo"><button>Mínimo <span class="sort-arrow"></span></button></th>
@@ -1314,10 +1318,113 @@
         Total da Meta = Meta Revenda + Meta Promotores + Meta Parceiros (segmentos 27/28/29, mês corrente em <code>METAS_MENSAIS_EMPRESAS</code>, campo <code>QuantidadeNormal</code>) &middot;
         Consumo Mensal = soma das SAÍDAS (vendas, <code>003_SAIDA_POR_VENDAS</code>) do mês em curso (dia 1 até hoje) — não inclui transferências &middot;
         Tendência Consumo = projeção do fechamento do mês, a partir do ritmo de vendas até hoje: (Consumo Mensal ÷ dias já passados no mês) × dias totais do mês &middot;
+        % Meta Atingido = Consumo Mensal ÷ Total da Meta &middot; % Meta Projetado = Tendência Consumo ÷ Total da Meta &middot; "— sem meta" aparece quando o produto não tem meta cadastrada nesse mês (0% seria enganoso, pareceria meta não batida) &middot;
         Estoque Mínimo = Total da Meta × X% (ajustável acima, padrão 80%) &middot;
         Estoque Máximo = Total da Meta + X% &middot;
         Ponto de Ressuprimento = Estoque Mínimo + Y% (ajustável acima, padrão 30%) &middot;
         Data prevista do pedido = hoje + (Estoque atual − Ponto de ressuprimento) ÷ (Consumo Mensal ÷ dias já passados no mês).
+      </div>
+    </div>
+    </div>
+
+    <div id="tab-content-giro" class="is-hidden">
+    <div class="panel">
+      <div class="cmp-metric-toggle" id="giro-view-toggle">
+        <button type="button" class="cmp-metric-btn is-active" data-view="abc">📊 Curva ABC</button>
+        <button type="button" class="cmp-metric-btn" data-view="excesso">📦 Excesso de Estoque</button>
+      </div>
+
+      <div id="giro-view-abc">
+        <div class="kpis kpis-4" id="kpis-abc">
+          <div class="kpi kpi-static k-ok"><div class="num" id="count-abc-a">–</div><div class="lbl">Classe A (giro alto)</div></div>
+          <div class="kpi kpi-static k-warning"><div class="num" id="count-abc-b">–</div><div class="lbl">Classe B</div></div>
+          <div class="kpi kpi-static"><div class="num" id="count-abc-c">–</div><div class="lbl">Classe C (giro baixo)</div></div>
+          <div class="kpi kpi-static"><div class="num" id="total-abc-valor">–</div><div class="lbl">Total vendido no mês</div></div>
+        </div>
+        <div class="filters">
+          <div class="field">
+            <label for="f-abc-empresa">Empresa</label>
+            <select id="f-abc-empresa"><option value="">Todas as empresas</option></select>
+          </div>
+          <div class="field">
+            <label for="f-abc-classe">Classe</label>
+            <select id="f-abc-classe">
+              <option value="">Todas as classes</option>
+              <option value="A">A</option>
+              <option value="B">B</option>
+              <option value="C">C</option>
+            </select>
+          </div>
+          <div class="spacer"></div>
+          <span class="result-count" id="result-count-abc"></span>
+          <button class="clear-btn" id="clear-filters-abc">Limpar filtros</button>
+          <button class="clear-btn copy-btn" id="copy-abc-btn" type="button">📋 Copiar para Excel</button>
+          <span class="copy-status" id="copy-abc-status"></span>
+        </div>
+        <div class="table-scroll">
+          <table>
+            <thead>
+              <tr>
+                <th data-key="Empresa"><button>Empresa <span class="sort-arrow"></span></button></th>
+                <th data-key="Produto"><button>Produto <span class="sort-arrow"></span></button></th>
+                <th data-key="VendaMesValor"><button>Valor Vendido<br>no Mês <span class="sort-arrow"></span></button></th>
+                <th data-key="VendaMes"><button>Qtd Vendida<br>no Mês <span class="sort-arrow"></span></button></th>
+                <th data-key="_pctDoTotal"><button>% do<br>Total <span class="sort-arrow"></span></button></th>
+                <th data-key="_pctAcumulado"><button>% Acumu-<br>lado <span class="sort-arrow"></span></button></th>
+                <th data-key="_classeAbc"><button>Classe <span class="sort-arrow"></span></button></th>
+              </tr>
+            </thead>
+            <tbody id="tbody-abc"></tbody>
+          </table>
+        </div>
+        <div class="empty-state" id="empty-state-abc" style="display:none;">Nenhum produto corresponde aos filtros aplicados.</div>
+        <div class="footnote">
+          Curva ABC por VALOR vendido no mês corrente (<code>003_SAIDA_POR_VENDAS</code>/<code>VENDAS_VENDEDOR</code>), não só quantidade &middot;
+          Classe A = produtos que somam até 80% do valor total vendido (ordenados do maior pro menor) &middot; Classe B = até 95% acumulado &middot; Classe C = os 5% finais &middot;
+          Prioridade de atenção/reposição: A &gt; B &gt; C.
+        </div>
+      </div>
+
+      <div id="giro-view-excesso" class="is-hidden">
+        <div class="kpis kpis-4" id="kpis-excesso">
+          <div class="kpi kpi-static k-warning"><div class="num" id="count-excesso">–</div><div class="lbl">SKUs com excesso de estoque</div></div>
+          <div class="kpi kpi-static"><div class="num" id="total-excesso-unidades">–</div><div class="lbl">Unidades em excesso</div></div>
+          <div class="kpi kpi-static"><div class="num" id="total-excesso-valor">–</div><div class="lbl">Valor equivalente parado</div></div>
+          <div class="kpi kpi-static"><div class="num" id="media-excesso-cobertura">–</div><div class="lbl">Cobertura média (dias)</div></div>
+        </div>
+        <div class="filters">
+          <div class="field">
+            <label for="f-excesso-empresa">Empresa</label>
+            <select id="f-excesso-empresa"><option value="">Todas as empresas</option></select>
+          </div>
+          <div class="spacer"></div>
+          <span class="result-count" id="result-count-excesso"></span>
+          <button class="clear-btn" id="clear-filters-excesso">Limpar filtros</button>
+          <button class="clear-btn copy-btn" id="copy-excesso-btn" type="button">📋 Copiar para Excel</button>
+          <span class="copy-status" id="copy-excesso-status"></span>
+        </div>
+        <div class="table-scroll">
+          <table>
+            <thead>
+              <tr>
+                <th data-key="Empresa"><button>Empresa <span class="sort-arrow"></span></button></th>
+                <th data-key="Produto"><button>Produto <span class="sort-arrow"></span></button></th>
+                <th data-key="EstoqueAtual"><button>Estoque<br>Atual <span class="sort-arrow"></span></button></th>
+                <th data-key="EstoqueMaximo"><button>Estoque<br>Máximo <span class="sort-arrow"></span></button></th>
+                <th data-key="_excesso"><button>Excesso<br>(unid.) <span class="sort-arrow"></span></button></th>
+                <th data-key="_coberturaDias"><button>Cobertura<br>(dias) <span class="sort-arrow"></span></button></th>
+                <th data-key="_valorParado"><button>Valor<br>Equivalente <span class="sort-arrow"></span></button></th>
+              </tr>
+            </thead>
+            <tbody id="tbody-excesso"></tbody>
+          </table>
+        </div>
+        <div class="empty-state" id="empty-state-excesso" style="display:none;">Nenhum produto com excesso de estoque nos filtros atuais.</div>
+        <div class="footnote">
+          Excesso = Estoque Atual − Estoque Máximo (só entra na lista quando positivo) &middot;
+          Cobertura = Estoque Atual ÷ Consumo Médio Diário &middot;
+          Valor Equivalente = Excesso × preço médio de venda do mês (Valor Vendido no Mês ÷ Qtd Vendida) — é uma estimativa de capital parado a preço de venda, não é o custo real de compra.
+        </div>
       </div>
     </div>
     </div>
@@ -1353,6 +1460,30 @@
         <span class="kpi-click-icon" aria-hidden="true">⤢</span>
         <div class="num" id="total-prod-projecao">–</div>
         <div class="lbl">Projeção de quantidade de vendas mensal</div>
+      </div>
+    </div>
+
+    <p class="tab-context-note">Funil operacional · tempo entre a digitação e o processamento do pedido, todo o histórico</p>
+    <div class="kpis kpis-4" id="kpis-funil">
+      <div class="kpi kpi-static kpi-clickable" id="kpi-funil-sla" tabindex="0" role="button" aria-pressed="false" title="Clique para ver por filial">
+        <span class="kpi-click-icon" aria-hidden="true">⤢</span>
+        <div class="num" id="total-funil-sla">–</div>
+        <div class="lbl">Processados em até 24h</div>
+      </div>
+      <div class="kpi kpi-static kpi-clickable" id="kpi-funil-tempo" tabindex="0" role="button" aria-pressed="false" title="Clique para ver por filial">
+        <span class="kpi-click-icon" aria-hidden="true">⤢</span>
+        <div class="num" id="total-funil-tempo">–</div>
+        <div class="lbl">Tempo médio de processamento</div>
+      </div>
+      <div class="kpi kpi-static kpi-clickable" id="kpi-funil-pendentes" tabindex="0" role="button" aria-pressed="false" title="Clique para ver por filial">
+        <span class="kpi-click-icon" aria-hidden="true">⤢</span>
+        <div class="num" id="total-funil-pendentes">–</div>
+        <div class="lbl">Pendentes em aberto</div>
+      </div>
+      <div class="kpi kpi-static kpi-clickable k-danger" id="kpi-funil-atraso" tabindex="0" role="button" aria-pressed="false" title="Clique para ver por filial">
+        <span class="kpi-click-icon" aria-hidden="true">⤢</span>
+        <div class="num" id="total-funil-atraso">–</div>
+        <div class="lbl">Pendentes há mais de 48h</div>
       </div>
     </div>
     <div class="panel">
@@ -1406,6 +1537,72 @@
         Projeção mensal = ritmo do mês em curso (faturamento/produtos até hoje ÷ dia do mês) projetado para os dias totais do mês &middot;
         Clique nos cards acima (⤢) para ver o detalhamento por filial &middot;
         Clique no nome do cliente para ver os itens do pedido e os dados do cliente (segmento, situação, cidade).
+      </div>
+    </div>
+    </div>
+
+    <div id="tab-content-transferencias" class="is-hidden">
+    <div class="panel">
+      <div class="kpis kpis-4" id="kpis-transf">
+        <div class="kpi kpi-static"><div class="num" id="total-transf-valor">–</div><div class="lbl">Total transferido (valor)</div></div>
+        <div class="kpi kpi-static"><div class="num" id="total-transf-qtd">–</div><div class="lbl">Transferências realizadas</div></div>
+        <div class="kpi kpi-static"><div class="num" id="total-transf-unidades">–</div><div class="lbl">Unidades transferidas</div></div>
+        <div class="kpi kpi-static"><div class="num" id="rota-transf-top" style="font-size:13px;">–</div><div class="lbl">Rota mais ativa</div></div>
+      </div>
+
+      <div class="filters">
+        <div class="field">
+          <label for="f-transf-origem">Origem</label>
+          <select id="f-transf-origem"><option value="">Todas as filiais</option></select>
+        </div>
+        <div class="field">
+          <label for="f-transf-destino">Destino</label>
+          <select id="f-transf-destino"><option value="">Todas as filiais</option></select>
+        </div>
+      </div>
+
+      <div class="cliente-section-title">Fluxo por rota (origem → destino)</div>
+      <div class="table-scroll">
+        <table>
+          <thead>
+            <tr>
+              <th data-key="Rota"><button>Rota <span class="sort-arrow"></span></button></th>
+              <th data-key="Transferencias"><button>Nr. de<br>Transferências <span class="sort-arrow"></span></button></th>
+              <th data-key="Unidades"><button>Unidades <span class="sort-arrow"></span></button></th>
+              <th data-key="Valor"><button>Valor Total <span class="sort-arrow"></span></button></th>
+            </tr>
+          </thead>
+          <tbody id="tbody-transf-rotas"></tbody>
+        </table>
+      </div>
+
+      <div class="filters" style="margin-top:10px;">
+        <span class="result-count" id="result-count-transf"></span>
+        <button class="clear-btn" id="clear-filters-transf">Limpar filtros</button>
+        <button class="clear-btn copy-btn" id="copy-transf-btn" type="button">📋 Copiar para Excel</button>
+        <span class="copy-status" id="copy-transf-status"></span>
+      </div>
+      <div class="cliente-section-title">Detalhe das transferências</div>
+      <div class="table-scroll">
+        <table>
+          <thead>
+            <tr>
+              <th data-key="Data"><button>Data <span class="sort-arrow"></span></button></th>
+              <th data-key="EmpresaOrigem"><button>Origem <span class="sort-arrow"></span></button></th>
+              <th data-key="EmpresaDestino"><button>Destino <span class="sort-arrow"></span></button></th>
+              <th data-key="Produto"><button>Produto <span class="sort-arrow"></span></button></th>
+              <th data-key="Qte"><button>Qtd <span class="sort-arrow"></span></button></th>
+              <th data-key="Total"><button>Valor <span class="sort-arrow"></span></button></th>
+            </tr>
+          </thead>
+          <tbody id="tbody-transf-detalhe"></tbody>
+        </table>
+      </div>
+      <div class="empty-state" id="empty-state-transf" style="display:none;">Nenhuma transferência encontrada nos filtros aplicados.</div>
+      <div class="footnote">
+        Origem = filial que enviou &middot; Destino = filial que recebeu (<code>TRANFERÊNCIA_PAI</code>, ligado a <code>004_SAIDAS_POR_TRANSFERENCIAS</code> por produto) &middot;
+        Valor = preço de saída × quantidade transferida — é o valor de movimentação entre filiais, não lucro &middot;
+        Histórico completo disponível (sem janela de tempo) &middot; clique nos cabeçalhos das tabelas pra ordenar.
       </div>
     </div>
     </div>
@@ -1520,6 +1717,7 @@ const RAW_META_SEGMENTO = __META_SEGMENTO_JSON__;
 const RAW_META_PRODUTO = __META_PRODUTO_JSON__;
 const RAW_PEDIDOS = __PEDIDOS_JSON__;
 const RAW_PEDIDOS_RESUMO = __PEDIDOS_RESUMO_JSON__;
+const RAW_TRANSFERENCIAS = __TRANSFERENCIAS_JSON__;
 
 // Preenchidos só pelo backend hospedado (Render) a cada login, sessão a sessão — o build.js do
 // Artifact público e do dashboard local sempre substitui os dois por string vazia, então o bloco
@@ -2099,7 +2297,7 @@ render();
 })();
 
 (function initTabs() {
-  const tabs = ["estoque", "meta", "pedidos"];
+  const tabs = ["estoque", "meta", "giro", "pedidos", "transferencias"];
   const btns = {};
   const contents = {};
   for (const t of tabs) {
@@ -2114,7 +2312,9 @@ render();
       contents[t].classList.toggle("is-hidden", !isActive);
     }
     if (tab === "meta" && window.renderMeta) window.renderMeta();
+    if (tab === "giro" && window.renderGiro) window.renderGiro();
     if (tab === "pedidos" && window.renderPedidos) window.renderPedidos();
+    if (tab === "transferencias" && window.renderTransferencias) window.renderTransferencias();
   }
 
   for (const t of tabs) {
@@ -2137,6 +2337,14 @@ render();
     return new Date(date.getFullYear(), date.getMonth() + 1, 0).getDate();
   }
 
+  // null = sem meta cadastrada pro produto (nao confundir com 0% atingido, que seria "tem meta
+  // mas nao vendeu nada ainda"). >=100% verde, 70-99% amarelo, <70% vermelho.
+  function fmtPctMeta(pct) {
+    if (pct === null || pct === undefined) return `<span style="color:var(--text-faint)">— sem meta</span>`;
+    const cor = pct >= 100 ? "var(--ok)" : (pct >= 70 ? "var(--warning)" : "var(--danger)");
+    return `<span style="color:${cor};font-weight:600">${fmtNum(pct, 1)}%</span>`;
+  }
+
   function recomputeMetaDerived(row, params) {
     const totalMeta = row.TotalMeta || 0;
     const totalMetaMaisX = totalMeta * (1 + params.percentualX / 100);
@@ -2155,6 +2363,10 @@ render();
     row.PontoRessuprimento = Math.round(pontoRessup * 100) / 100;
     row.EstoqueMaximo = Math.round(maximo * 100) / 100;
     row.TendenciaConsumo = Math.round(tendencia * 100) / 100;
+    // Metas x Realizado: null quando nao ha meta cadastrada (TotalMeta=0) - "0%" seria enganoso
+    // (pareceria que a meta nao foi atingida, quando na verdade nao existe meta pra bater).
+    row._pctAtingido = totalMeta > 0 ? Math.round((consumoMensal / totalMeta) * 1000) / 10 : null;
+    row._pctProjetado = totalMeta > 0 ? Math.round((tendencia / totalMeta) * 1000) / 10 : null;
 
     const atual = row.EstoqueAtual;
     if (atual === null || atual === undefined) {
@@ -2261,7 +2473,9 @@ render();
         <td class="num-cell">${fmtNum(r.TotalMeta)}</td>
         <td class="num-cell">${fmtNum(r.TotalMetaMaisX)}</td>
         <td class="num-cell">${fmtNum(r.ConsumoMensal)}</td>
+        <td class="num-cell">${fmtPctMeta(r._pctAtingido)}</td>
         <td class="num-cell">${fmtNum(r.TendenciaConsumo)}</td>
+        <td class="num-cell">${fmtPctMeta(r._pctProjetado)}</td>
         <td class="num-cell">${fmtNum(r.EstoqueAtual)}</td>
         <td class="gauge-cell">${gaugeHtml(r)}</td>
         <td class="num-cell">${fmtNum(r.EstoqueSeguranca_Minimo)}</td>
@@ -2311,10 +2525,11 @@ render();
   });
 
   document.getElementById("copy-meta-btn").addEventListener("click", () => {
-    const headers = ["Empresa", "Produto", "Meta Revenda", "Meta Promotores", "Meta Parceiros", "Total da Meta", "Total Meta +X%", "Consumo Mensal", "Tendência Consumo", "Estoque Atual", "Mínimo", "Ponto Ressuprimento", "Máximo", "Pedir em (dias)", "Data Prevista Pedido", "Situação"];
+    const headers = ["Empresa", "Produto", "Meta Revenda", "Meta Promotores", "Meta Parceiros", "Total da Meta", "Total Meta +X%", "Consumo Mensal", "% Meta Atingido", "Tendência Consumo", "% Meta Projetado", "Estoque Atual", "Mínimo", "Ponto Ressuprimento", "Máximo", "Pedir em (dias)", "Data Prevista Pedido", "Situação"];
     const rowsOut = lastRenderedRows.map(r => [
       r.Empresa, r.Produto, r.MetaRevenda, r.MetaPromotores, r.MetaParceiros, r.TotalMeta, r.TotalMetaMaisX,
-      r.ConsumoMensal, r.TendenciaConsumo, r.EstoqueAtual, r.EstoqueSeguranca_Minimo, r.PontoRessuprimento, r.EstoqueMaximo,
+      r.ConsumoMensal, r._pctAtingido === null ? "" : r._pctAtingido, r.TendenciaConsumo, r._pctProjetado === null ? "" : r._pctProjetado,
+      r.EstoqueAtual, r.EstoqueSeguranca_Minimo, r.PontoRessuprimento, r.EstoqueMaximo,
       r._diasParaPedido, r._dataPedido, META_STATUS_LABEL[r._statusBucket]
     ]);
     copyToExcel(headers, rowsOut, document.getElementById("copy-meta-status"));
@@ -2349,6 +2564,185 @@ render();
   window.renderMeta = render;
 })();
 
+(function initGiroTab() {
+  const dadosBase = RAW_DATA;
+
+  const empresaSelAbc = document.getElementById("f-abc-empresa");
+  const empresaSelExcesso = document.getElementById("f-excesso-empresa");
+  const classeSel = document.getElementById("f-abc-classe");
+
+  const empresasDistintas = [...new Set(dadosBase.map(r => r.Empresa))].sort((a, b) => a.localeCompare(b, "pt-BR"));
+  for (const sel of [empresaSelAbc, empresaSelExcesso]) {
+    for (const e of empresasDistintas) {
+      const opt = document.createElement("option");
+      opt.value = e; opt.textContent = e;
+      sel.appendChild(opt);
+    }
+  }
+
+  const viewAbc = document.getElementById("giro-view-abc");
+  const viewExcesso = document.getElementById("giro-view-excesso");
+  document.querySelectorAll("#giro-view-toggle .cmp-metric-btn").forEach(btn => {
+    btn.addEventListener("click", () => {
+      document.querySelectorAll("#giro-view-toggle .cmp-metric-btn").forEach(b => b.classList.remove("is-active"));
+      btn.classList.add("is-active");
+      const view = btn.dataset.view;
+      viewAbc.classList.toggle("is-hidden", view !== "abc");
+      viewExcesso.classList.toggle("is-hidden", view !== "excesso");
+    });
+  });
+
+  function ordenaGenerico(rows, key, dir) {
+    return rows.slice().sort((a, b) => {
+      const av = a[key], bv = b[key];
+      if (typeof av === "string") return av.localeCompare(bv, "pt-BR") * dir;
+      return ((av || 0) - (bv || 0)) * dir;
+    });
+  }
+  function wireSort(scopeSelector, getSortState, setSortState, renderFn) {
+    document.querySelectorAll(`${scopeSelector} th[data-key] button`).forEach(btn => {
+      btn.addEventListener("click", () => {
+        const th = btn.closest("th");
+        const key = th.dataset.key;
+        let { sortKey, sortDir } = getSortState();
+        if (sortKey === key) sortDir *= -1; else { sortKey = key; sortDir = 1; }
+        setSortState(sortKey, sortDir);
+        document.querySelectorAll(`${scopeSelector} th[data-key] .sort-arrow`).forEach(el => el.textContent = "");
+        th.querySelector(".sort-arrow").textContent = sortDir === 1 ? "▲" : "▼";
+        renderFn();
+      });
+    });
+  }
+
+  // ================= CURVA ABC (por valor vendido no mes) =================
+  let abcSortKey = "VendaMesValor", abcSortDir = -1;
+  let lastRenderedAbc = [];
+
+  function computeAbc(empresaVal) {
+    let rows = dadosBase.filter(r => (r.VendaMesValor || 0) > 0);
+    if (empresaVal) rows = rows.filter(r => r.Empresa === empresaVal);
+    rows = rows.slice().sort((a, b) => b.VendaMesValor - a.VendaMesValor);
+    const totalValor = rows.reduce((s, r) => s + (r.VendaMesValor || 0), 0);
+    let acumulado = 0;
+    for (const r of rows) {
+      const pctDoTotal = totalValor > 0 ? (r.VendaMesValor / totalValor) * 100 : 0;
+      acumulado += pctDoTotal;
+      r._pctDoTotal = Math.round(pctDoTotal * 100) / 100;
+      r._pctAcumulado = Math.round(acumulado * 100) / 100;
+      r._classeAbc = acumulado <= 80 ? "A" : (acumulado <= 95 ? "B" : "C");
+    }
+    return { rows, totalValor };
+  }
+
+  function renderAbc() {
+    const empresaVal = empresaSelAbc.value;
+    const classeVal = classeSel.value;
+    const { rows: allRows, totalValor } = computeAbc(empresaVal);
+
+    document.getElementById("count-abc-a").textContent = fmtNum(allRows.filter(r => r._classeAbc === "A").length);
+    document.getElementById("count-abc-b").textContent = fmtNum(allRows.filter(r => r._classeAbc === "B").length);
+    document.getElementById("count-abc-c").textContent = fmtNum(allRows.filter(r => r._classeAbc === "C").length);
+    document.getElementById("total-abc-valor").textContent = fmtMoney(totalValor);
+
+    let rows = classeVal ? allRows.filter(r => r._classeAbc === classeVal) : allRows;
+    rows = ordenaGenerico(rows, abcSortKey, abcSortDir);
+
+    lastRenderedAbc = rows;
+    document.getElementById("empty-state-abc").style.display = rows.length ? "none" : "block";
+    document.getElementById("result-count-abc").textContent = `${rows.length} de ${allRows.length} itens`;
+
+    const classeBadge = { A: "c-ok", B: "c-warning", C: "c-danger" };
+    document.getElementById("tbody-abc").innerHTML = rows.map(r => `
+      <tr>
+        <td>${empresaBadgeHtml(r.Empresa)}</td>
+        <td class="produto-name" title="${r.Produto}">${r.Produto}</td>
+        <td class="num-cell">${fmtMoney(r.VendaMesValor)}</td>
+        <td class="num-cell">${fmtNum(r.VendaMes)}</td>
+        <td class="num-cell">${fmtNum(r._pctDoTotal, 1)}%</td>
+        <td class="num-cell">${fmtNum(r._pctAcumulado, 1)}%</td>
+        <td><span class="chip ${classeBadge[r._classeAbc]}">${r._classeAbc}</span></td>
+      </tr>
+    `).join("");
+  }
+
+  wireSort("#giro-view-abc", () => ({ sortKey: abcSortKey, sortDir: abcSortDir }), (k, d) => { abcSortKey = k; abcSortDir = d; }, renderAbc);
+  empresaSelAbc.addEventListener("change", renderAbc);
+  classeSel.addEventListener("change", renderAbc);
+  document.getElementById("clear-filters-abc").addEventListener("click", () => {
+    empresaSelAbc.value = ""; classeSel.value = ""; renderAbc();
+  });
+  document.getElementById("copy-abc-btn").addEventListener("click", () => {
+    const headers = ["Empresa", "Produto", "Valor Vendido no Mês", "Qtd Vendida no Mês", "% do Total", "% Acumulado", "Classe"];
+    const rowsOut = lastRenderedAbc.map(r => [r.Empresa, r.Produto, r.VendaMesValor, r.VendaMes, r._pctDoTotal, r._pctAcumulado, r._classeAbc]);
+    copyToExcel(headers, rowsOut, document.getElementById("copy-abc-status"));
+  });
+
+  // ================= EXCESSO DE ESTOQUE (inverso do ponto de ressuprimento) =================
+  let excSortKey = "_excesso", excSortDir = -1;
+  let lastRenderedExc = [];
+
+  function computeExcesso(empresaVal) {
+    let rows = dadosBase.filter(r =>
+      r.EstoqueAtual !== null && r.EstoqueAtual !== undefined &&
+      r.EstoqueMaximo !== null && r.EstoqueMaximo !== undefined &&
+      r.EstoqueAtual > r.EstoqueMaximo
+    );
+    if (empresaVal) rows = rows.filter(r => r.Empresa === empresaVal);
+    for (const r of rows) {
+      r._excesso = Math.round((r.EstoqueAtual - r.EstoqueMaximo) * 100) / 100;
+      r._coberturaDias = r.ConsumoMedioDiario > 0 ? Math.round((r.EstoqueAtual / r.ConsumoMedioDiario) * 10) / 10 : null;
+      const precoMedio = r.VendaMes > 0 ? r.VendaMesValor / r.VendaMes : 0;
+      r._valorParado = Math.round(r._excesso * precoMedio * 100) / 100;
+    }
+    return rows;
+  }
+
+  function renderExcesso() {
+    const empresaVal = empresaSelExcesso.value;
+    const allRows = computeExcesso(empresaVal);
+
+    document.getElementById("count-excesso").textContent = fmtNum(allRows.length);
+    document.getElementById("total-excesso-unidades").textContent = fmtNum(allRows.reduce((s, r) => s + r._excesso, 0));
+    document.getElementById("total-excesso-valor").textContent = fmtMoney(allRows.reduce((s, r) => s + r._valorParado, 0));
+    const comCobertura = allRows.filter(r => r._coberturaDias !== null);
+    document.getElementById("media-excesso-cobertura").textContent = comCobertura.length
+      ? fmtNum(comCobertura.reduce((s, r) => s + r._coberturaDias, 0) / comCobertura.length, 0)
+      : "—";
+
+    const rows = ordenaGenerico(allRows, excSortKey, excSortDir);
+    lastRenderedExc = rows;
+    document.getElementById("empty-state-excesso").style.display = rows.length ? "none" : "block";
+    document.getElementById("result-count-excesso").textContent = `${rows.length} itens`;
+
+    document.getElementById("tbody-excesso").innerHTML = rows.map(r => `
+      <tr>
+        <td>${empresaBadgeHtml(r.Empresa)}</td>
+        <td class="produto-name" title="${r.Produto}">${r.Produto}</td>
+        <td class="num-cell">${fmtNum(r.EstoqueAtual)}</td>
+        <td class="num-cell">${fmtNum(r.EstoqueMaximo)}</td>
+        <td class="num-cell">${fmtNum(r._excesso)}</td>
+        <td class="num-cell">${r._coberturaDias === null ? "—" : fmtNum(r._coberturaDias, 0)}</td>
+        <td class="num-cell">${fmtMoney(r._valorParado)}</td>
+      </tr>
+    `).join("");
+  }
+
+  wireSort("#giro-view-excesso", () => ({ sortKey: excSortKey, sortDir: excSortDir }), (k, d) => { excSortKey = k; excSortDir = d; }, renderExcesso);
+  empresaSelExcesso.addEventListener("change", renderExcesso);
+  document.getElementById("clear-filters-excesso").addEventListener("click", () => {
+    empresaSelExcesso.value = ""; renderExcesso();
+  });
+  document.getElementById("copy-excesso-btn").addEventListener("click", () => {
+    const headers = ["Empresa", "Produto", "Estoque Atual", "Estoque Máximo", "Excesso (unid.)", "Cobertura (dias)", "Valor Equivalente"];
+    const rowsOut = lastRenderedExc.map(r => [r.Empresa, r.Produto, r.EstoqueAtual, r.EstoqueMaximo, r._excesso, r._coberturaDias, r._valorParado]);
+    copyToExcel(headers, rowsOut, document.getElementById("copy-excesso-status"));
+  });
+
+  window.renderGiro = function () {
+    renderAbc();
+    renderExcesso();
+  };
+})();
 
 (function initCopyFallbackModal() {
   const modal = document.getElementById("copy-fallback-modal");
@@ -2494,6 +2888,46 @@ render();
   document.getElementById("total-fat-projecao").textContent = fmtMoney(resumo.Projecao.Faturamento);
   document.getElementById("total-prod-projecao").textContent = fmtNum(resumo.Projecao.Produtos);
 
+  // Funil operacional - todo o historico de RAW_PEDIDOS (nao so hoje/mes), pra dar uma leitura
+  // estrutural de SLA/gargalo, nao só um instantâneo do dia.
+  const SLA_MINUTOS = 24 * 60;
+  const ATRASO_MINUTOS = 48 * 60;
+  const processados = RAW_PEDIDOS.filter(p => !p.Pendente && p.TempoProcessamentoMin !== null && p.TempoProcessamentoMin !== undefined);
+  const pendentesAbertos = RAW_PEDIDOS.filter(p => p.Pendente);
+  const dentroSla = processados.filter(p => p.TempoProcessamentoMin <= SLA_MINUTOS).length;
+  const slaPct = processados.length ? Math.round((dentroSla / processados.length) * 1000) / 10 : null;
+  const tempoMedioGeral = processados.length ? processados.reduce((s, p) => s + p.TempoProcessamentoMin, 0) / processados.length : null;
+  const emAtraso = pendentesAbertos.filter(p => p.TempoAbertoMin !== null && p.TempoAbertoMin !== undefined && p.TempoAbertoMin > ATRASO_MINUTOS).length;
+
+  document.getElementById("total-funil-sla").textContent = slaPct === null ? "—" : `${fmtNum(slaPct, 1)}%`;
+  document.getElementById("total-funil-tempo").textContent = tempoMedioGeral === null ? "—" : fmtTempo(tempoMedioGeral);
+  document.getElementById("total-funil-pendentes").textContent = fmtNum(pendentesAbertos.length);
+  document.getElementById("total-funil-atraso").textContent = fmtNum(emAtraso);
+
+  // agrupa por filial pra alimentar os breakdowns dos 4 cards novos (mesmo modal ja usado pelos
+  // 6 cards de faturamento acima).
+  function porFilialFunil() {
+    const porEmpresa = new Map();
+    function grupo(nome) {
+      if (!porEmpresa.has(nome)) porEmpresa.set(nome, { Empresa: nome, processados: [], pendentes: [], atraso: 0 });
+      return porEmpresa.get(nome);
+    }
+    for (const p of processados) grupo(p.Empresa).processados.push(p.TempoProcessamentoMin);
+    for (const p of pendentesAbertos) {
+      const g = grupo(p.Empresa);
+      g.pendentes.push(p);
+      if (p.TempoAbertoMin !== null && p.TempoAbertoMin !== undefined && p.TempoAbertoMin > ATRASO_MINUTOS) g.atraso++;
+    }
+    return [...porEmpresa.values()].map(g => ({
+      Empresa: g.Empresa,
+      SlaPct: g.processados.length ? Math.round((g.processados.filter(t => t <= SLA_MINUTOS).length / g.processados.length) * 1000) / 10 : null,
+      TempoMedio: g.processados.length ? g.processados.reduce((s, t) => s + t, 0) / g.processados.length : null,
+      Pendentes: g.pendentes.length,
+      Atraso: g.atraso
+    })).sort((a, b) => a.Empresa.localeCompare(b.Empresa, "pt-BR"));
+  }
+  const funilPorFilial = porFilialFunil();
+
   // modal de detalhamento por filial - reaproveitado pelos 4 cards, cada um so muda o titulo/dado
   const bdModal = document.getElementById("filial-breakdown-modal");
   const bdTitle = document.getElementById("filial-breakdown-title");
@@ -2522,7 +2956,11 @@ render();
     "kpi-prod-dia": () => abrirBreakdown("Produtos vendidos no dia por filial", resumo.Hoje.PorEmpresa, "Produtos", (v) => fmtNum(v)),
     "kpi-prod-mes": () => abrirBreakdown("Produtos vendidos no mês por filial", resumo.Mes.PorEmpresa, "Produtos", (v) => fmtNum(v)),
     "kpi-fat-projecao": () => abrirBreakdown("Projeção de faturamento mensal por filial", resumo.Projecao.PorEmpresa, "Faturamento", fmtMoney),
-    "kpi-prod-projecao": () => abrirBreakdown("Projeção de quantidade de vendas mensal por filial", resumo.Projecao.PorEmpresa, "Produtos", (v) => fmtNum(v))
+    "kpi-prod-projecao": () => abrirBreakdown("Projeção de quantidade de vendas mensal por filial", resumo.Projecao.PorEmpresa, "Produtos", (v) => fmtNum(v)),
+    "kpi-funil-sla": () => abrirBreakdown("% processados em até 24h, por filial", funilPorFilial, "SlaPct", (v) => v === null ? "—" : `${fmtNum(v, 1)}%`),
+    "kpi-funil-tempo": () => abrirBreakdown("Tempo médio de processamento, por filial", funilPorFilial, "TempoMedio", (v) => v === null ? "—" : fmtTempo(v)),
+    "kpi-funil-pendentes": () => abrirBreakdown("Pedidos pendentes em aberto, por filial", funilPorFilial, "Pendentes", (v) => fmtNum(v)),
+    "kpi-funil-atraso": () => abrirBreakdown("Pendentes há mais de 48h, por filial", funilPorFilial, "Atraso", (v) => fmtNum(v))
   };
   for (const id in kpiCards) {
     const el = document.getElementById(id);
@@ -2726,6 +3164,117 @@ render();
   });
 
   window.renderPedidos = render;
+})();
+
+(function initTransferenciasTab() {
+  const dados = RAW_TRANSFERENCIAS;
+
+  const empresaOrigemSel = document.getElementById("f-transf-origem");
+  const empresaDestinoSel = document.getElementById("f-transf-destino");
+
+  const origensDistintas = [...new Set(dados.map(r => r.EmpresaOrigem))].sort((a, b) => a.localeCompare(b, "pt-BR"));
+  const destinosDistintos = [...new Set(dados.map(r => r.EmpresaDestino))].sort((a, b) => a.localeCompare(b, "pt-BR"));
+  for (const e of origensDistintas) { const opt = document.createElement("option"); opt.value = e; opt.textContent = e; empresaOrigemSel.appendChild(opt); }
+  for (const e of destinosDistintos) { const opt = document.createElement("option"); opt.value = e; opt.textContent = e; empresaDestinoSel.appendChild(opt); }
+
+  let sortKeyDetalhe = "Data", sortDirDetalhe = -1;
+  let sortKeyRotas = "Valor", sortDirRotas = -1;
+  let lastRenderedDetalhe = [];
+  let lastRenderedRotas = [];
+
+  function ordenaGenerico(rows, key, dir) {
+    return rows.slice().sort((a, b) => {
+      const av = a[key], bv = b[key];
+      if (typeof av === "string") return av.localeCompare(bv, "pt-BR") * dir;
+      return ((av || 0) - (bv || 0)) * dir;
+    });
+  }
+
+  function render() {
+    const origemVal = empresaOrigemSel.value;
+    const destinoVal = empresaDestinoSel.value;
+    let rows = dados;
+    if (origemVal) rows = rows.filter(r => r.EmpresaOrigem === origemVal);
+    if (destinoVal) rows = rows.filter(r => r.EmpresaDestino === destinoVal);
+
+    const seqsUnicos = new Set(rows.map(r => `${r.CodEmpresaOrigem}|${r.CodEmpresaDestino}|${r.Seq}`));
+    const valorTotal = rows.reduce((s, r) => s + r.Total, 0);
+    const unidadesTotal = rows.reduce((s, r) => s + r.Qte, 0);
+    document.getElementById("total-transf-valor").textContent = fmtMoney(valorTotal);
+    document.getElementById("total-transf-qtd").textContent = fmtNum(seqsUnicos.size);
+    document.getElementById("total-transf-unidades").textContent = fmtNum(unidadesTotal);
+
+    // agrupa por rota (origem -> destino) - a visao principal de "fluxo entre filiais"
+    const rotaMap = new Map();
+    for (const r of rows) {
+      const key = `${r.EmpresaOrigem} → ${r.EmpresaDestino}`;
+      if (!rotaMap.has(key)) rotaMap.set(key, { Rota: key, seqs: new Set(), Unidades: 0, Valor: 0 });
+      const g = rotaMap.get(key);
+      g.seqs.add(r.Seq);
+      g.Unidades += r.Qte;
+      g.Valor += r.Total;
+    }
+    let rotas = [...rotaMap.values()].map(g => ({ Rota: g.Rota, Transferencias: g.seqs.size, Unidades: g.Unidades, Valor: Math.round(g.Valor * 100) / 100 }));
+    const rotaTop = rotas.length ? rotas.slice().sort((a, b) => b.Valor - a.Valor)[0] : null;
+    document.getElementById("rota-transf-top").textContent = rotaTop ? rotaTop.Rota : "—";
+
+    rotas = ordenaGenerico(rotas, sortKeyRotas, sortDirRotas);
+    lastRenderedRotas = rotas;
+    document.getElementById("tbody-transf-rotas").innerHTML = rotas.length ? rotas.map(r => `
+      <tr>
+        <td>${r.Rota}</td>
+        <td class="num-cell">${fmtNum(r.Transferencias)}</td>
+        <td class="num-cell">${fmtNum(r.Unidades)}</td>
+        <td class="num-cell">${fmtMoney(r.Valor)}</td>
+      </tr>
+    `).join("") : `<tr><td colspan="4" style="text-align:center;color:var(--text-muted);padding:14px 0;">Sem dados nos filtros aplicados.</td></tr>`;
+
+    // detalhe linha a linha
+    const detalhe = ordenaGenerico(rows, sortKeyDetalhe, sortDirDetalhe);
+    lastRenderedDetalhe = detalhe;
+    document.getElementById("empty-state-transf").style.display = detalhe.length ? "none" : "block";
+    document.getElementById("result-count-transf").textContent = `${detalhe.length} itens`;
+    document.getElementById("tbody-transf-detalhe").innerHTML = detalhe.map(r => `
+      <tr>
+        <td>${fmtDate(r.Data)}</td>
+        <td>${empresaBadgeHtml(r.EmpresaOrigem)}${r.EmpresaOrigem}</td>
+        <td>${empresaBadgeHtml(r.EmpresaDestino)}${r.EmpresaDestino}</td>
+        <td class="produto-name" title="${r.Produto}">${r.Produto}</td>
+        <td class="num-cell">${fmtNum(r.Qte)}</td>
+        <td class="num-cell">${fmtMoney(r.Total)}</td>
+      </tr>
+    `).join("");
+  }
+
+  document.querySelectorAll('#tab-content-transferencias th[data-key] button').forEach(btn => {
+    btn.addEventListener("click", () => {
+      const th = btn.closest("th");
+      const key = th.dataset.key;
+      const scopeTable = th.closest("table");
+      const isRotas = scopeTable.querySelector("tbody").id === "tbody-transf-rotas";
+      if (isRotas) {
+        if (sortKeyRotas === key) sortDirRotas *= -1; else { sortKeyRotas = key; sortDirRotas = 1; }
+      } else {
+        if (sortKeyDetalhe === key) sortDirDetalhe *= -1; else { sortKeyDetalhe = key; sortDirDetalhe = 1; }
+      }
+      scopeTable.querySelectorAll("th[data-key] .sort-arrow").forEach(el => el.textContent = "");
+      th.querySelector(".sort-arrow").textContent = (isRotas ? sortDirRotas : sortDirDetalhe) === 1 ? "▲" : "▼";
+      render();
+    });
+  });
+
+  empresaOrigemSel.addEventListener("change", render);
+  empresaDestinoSel.addEventListener("change", render);
+  document.getElementById("clear-filters-transf").addEventListener("click", () => {
+    empresaOrigemSel.value = ""; empresaDestinoSel.value = ""; render();
+  });
+  document.getElementById("copy-transf-btn").addEventListener("click", () => {
+    const headers = ["Data", "Origem", "Destino", "Produto", "Qtd", "Valor"];
+    const rowsOut = lastRenderedDetalhe.map(r => [r.Data, r.EmpresaOrigem, r.EmpresaDestino, r.Produto, r.Qte, r.Total]);
+    copyToExcel(headers, rowsOut, document.getElementById("copy-transf-status"));
+  });
+
+  window.renderTransferencias = render;
 })();
 
 </script>

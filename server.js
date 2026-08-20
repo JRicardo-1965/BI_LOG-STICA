@@ -82,6 +82,14 @@ function filterByEmpresas(arr, allowed) {
   return arr.filter((row) => allowed.includes(String(row.CodEmpresa)));
 }
 
+// transferencias nao tem um unico CodEmpresa (tem CodEmpresaOrigem + CodEmpresaDestino) - filterByEmpresas
+// sozinha filtraria tudo fora (row.CodEmpresa sempre undefined). Mostra a linha se o usuario tem acesso
+// a origem OU destino, ja que a transferencia envolve ele de um jeito ou de outro.
+function filterTransferencias(arr, allowed) {
+  if (!Array.isArray(arr)) return [];
+  return arr.filter((row) => allowed.includes(String(row.CodEmpresaOrigem)) || allowed.includes(String(row.CodEmpresaDestino)));
+}
+
 // recalcula os totais Hoje/Mes a partir de PorEmpresa ja filtrado - nao usa o total global vindo do
 // sync, senao um usuario restrito veria faturamento de empresa que ele nao tem permissao pra ver
 // embutido na soma total (mesmo sem ver a linha detalhada).
@@ -233,6 +241,7 @@ app.post('/api/sync', express.json({ limit: '25mb' }), async (req, res) => {
       metaProduto: body.metaProduto || [],
       pedidos: body.pedidos || [],
       pedidosResumo: body.pedidosResumo || { Hoje: { PorEmpresa: [] }, Mes: { PorEmpresa: [] }, Projecao: { PorEmpresa: [] } },
+      transferencias: body.transferencias || [],
       meta: body.meta || {},
       usuarios,
       usuariosEmpresas: (body.usuariosEmpresas || []).map((v) => ({ email: v.email, empresa: String(v.empresa) })),
@@ -274,6 +283,7 @@ app.get('/', requireAuth, (req, res) => {
   const metaProduto = filterByEmpresas(latestData.metaProduto, allowed);
   const pedidos = filterByEmpresas(latestData.pedidos, allowed);
   const pedidosResumo = filterResumoPedidos(latestData.pedidosResumo, allowed);
+  const transferencias = filterTransferencias(latestData.transferencias, allowed);
   const meta = latestData.meta || {};
 
   const html = TEMPLATE
@@ -288,6 +298,7 @@ app.get('/', requireAuth, (req, res) => {
     .replaceAll('__META_PRODUTO_JSON__', jsonForScript(metaProduto))
     .replaceAll('__PEDIDOS_JSON__', jsonForScript(pedidos))
     .replaceAll('__PEDIDOS_RESUMO_JSON__', jsonForScript(pedidosResumo))
+    .replaceAll('__TRANSFERENCIAS_JSON__', jsonForScript(transferencias))
     .replaceAll('__TODAY_ISO__', meta.TodayISO || new Date().toISOString().slice(0, 10))
     .replaceAll('__PERIODO_TEXTO__', meta.PeriodoTexto || '')
     .replaceAll('__FONTE_ATUALIZADA_EM__', meta.FonteAtualizadaEm || 'desconhecido')
