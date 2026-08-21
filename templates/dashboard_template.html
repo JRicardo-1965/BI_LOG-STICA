@@ -1543,10 +1543,11 @@
 
     <div id="tab-content-transferencias" class="is-hidden">
     <div class="panel">
-      <div class="kpis kpis-4" id="kpis-transf">
+      <div class="kpis kpis-5" id="kpis-transf">
         <div class="kpi kpi-static"><div class="num" id="total-transf-valor">–</div><div class="lbl">Total transferido (valor)</div></div>
         <div class="kpi kpi-static"><div class="num" id="total-transf-qtd">–</div><div class="lbl">Transferências realizadas</div></div>
         <div class="kpi kpi-static"><div class="num" id="total-transf-unidades">–</div><div class="lbl">Unidades transferidas</div></div>
+        <div class="kpi kpi-static" id="kpi-transf-pendente" tabindex="0" role="button" aria-pressed="false" title="Clique pra filtrar"><div class="num" id="total-transf-pendente">–</div><div class="lbl">Aguardando aceite</div></div>
         <div class="kpi kpi-static"><div class="num" id="rota-transf-top" style="font-size:13px;">–</div><div class="lbl">Rota mais ativa</div></div>
       </div>
 
@@ -1558,6 +1559,14 @@
         <div class="field">
           <label for="f-transf-destino">Destino</label>
           <select id="f-transf-destino"><option value="">Todas as filiais</option></select>
+        </div>
+        <div class="field">
+          <label for="f-transf-aceite">Aceite</label>
+          <select id="f-transf-aceite">
+            <option value="">Todos</option>
+            <option value="dado">Aceite dado</option>
+            <option value="pendente">Aceite não dado</option>
+          </select>
         </div>
       </div>
 
@@ -1593,6 +1602,9 @@
               <th data-key="Produto"><button>Produto <span class="sort-arrow"></span></button></th>
               <th data-key="Qte"><button>Qtd <span class="sort-arrow"></span></button></th>
               <th data-key="Total"><button>Valor <span class="sort-arrow"></span></button></th>
+              <th data-key="_aceiteRank"><button>Aceite <span class="sort-arrow"></span></button></th>
+              <th data-key="DataAceite"><button>Data do<br>Aceite <span class="sort-arrow"></span></button></th>
+              <th data-key="DiasParaAceite"><button>Dias até<br>Aceite <span class="sort-arrow"></span></button></th>
             </tr>
           </thead>
           <tbody id="tbody-transf-detalhe"></tbody>
@@ -1602,6 +1614,7 @@
       <div class="footnote">
         Origem = filial que enviou &middot; Destino = filial que recebeu (<code>TRANFERÊNCIA_PAI</code>, ligado a <code>004_SAIDAS_POR_TRANSFERENCIAS</code> por produto) &middot;
         Valor = preço de saída × quantidade transferida — é o valor de movimentação entre filiais, não lucro &middot;
+        <b>ACEITE DADO</b> = o destino já confirmou o recebimento (gera uma entrada real em <code>ENTRADAS</code>, ligada por <code>TRANFERÊNCIA_PAI_ACEITE</code>) &middot; <b>ACEITE NÃO DADO</b> = mercadoria já saiu da origem, mas o destino ainda não confirmou &middot; Dias até Aceite = Data do Aceite − Data da transferência &middot;
         Histórico completo disponível (sem janela de tempo) &middot; clique nos cabeçalhos das tabelas pra ordenar.
       </div>
     </div>
@@ -3167,10 +3180,14 @@ render();
 })();
 
 (function initTransferenciasTab() {
-  const dados = RAW_TRANSFERENCIAS;
+  // _aceiteRank: pendente (0) ordena antes de dado (1) por padrao, pra chamar atencao pro que
+  // ainda precisa de acompanhamento - mesmo espirito do "pendentes sempre em destaque" da aba
+  // Faturamento & Pedidos.
+  const dados = RAW_TRANSFERENCIAS.map(r => ({ ...r, _aceiteRank: r.AceiteDado ? 1 : 0 }));
 
   const empresaOrigemSel = document.getElementById("f-transf-origem");
   const empresaDestinoSel = document.getElementById("f-transf-destino");
+  const aceiteSel = document.getElementById("f-transf-aceite");
 
   const origensDistintas = [...new Set(dados.map(r => r.EmpresaOrigem))].sort((a, b) => a.localeCompare(b, "pt-BR"));
   const destinosDistintos = [...new Set(dados.map(r => r.EmpresaDestino))].sort((a, b) => a.localeCompare(b, "pt-BR"));
@@ -3193,16 +3210,21 @@ render();
   function render() {
     const origemVal = empresaOrigemSel.value;
     const destinoVal = empresaDestinoSel.value;
+    const aceiteVal = aceiteSel.value;
     let rows = dados;
     if (origemVal) rows = rows.filter(r => r.EmpresaOrigem === origemVal);
     if (destinoVal) rows = rows.filter(r => r.EmpresaDestino === destinoVal);
+    if (aceiteVal === "dado") rows = rows.filter(r => r.AceiteDado);
+    if (aceiteVal === "pendente") rows = rows.filter(r => !r.AceiteDado);
 
     const seqsUnicos = new Set(rows.map(r => `${r.CodEmpresaOrigem}|${r.CodEmpresaDestino}|${r.Seq}`));
+    const seqsPendentes = new Set(rows.filter(r => !r.AceiteDado).map(r => `${r.CodEmpresaOrigem}|${r.CodEmpresaDestino}|${r.Seq}`));
     const valorTotal = rows.reduce((s, r) => s + r.Total, 0);
     const unidadesTotal = rows.reduce((s, r) => s + r.Qte, 0);
     document.getElementById("total-transf-valor").textContent = fmtMoney(valorTotal);
     document.getElementById("total-transf-qtd").textContent = fmtNum(seqsUnicos.size);
     document.getElementById("total-transf-unidades").textContent = fmtNum(unidadesTotal);
+    document.getElementById("total-transf-pendente").textContent = fmtNum(seqsPendentes.size);
 
     // agrupa por rota (origem -> destino) - a visao principal de "fluxo entre filiais"
     const rotaMap = new Map();
@@ -3235,13 +3257,16 @@ render();
     document.getElementById("empty-state-transf").style.display = detalhe.length ? "none" : "block";
     document.getElementById("result-count-transf").textContent = `${detalhe.length} itens`;
     document.getElementById("tbody-transf-detalhe").innerHTML = detalhe.map(r => `
-      <tr>
+      <tr class="${r.AceiteDado ? "" : "row-warning"}">
         <td>${fmtDate(r.Data)}</td>
         <td>${empresaBadgeHtml(r.EmpresaOrigem)}${r.EmpresaOrigem}</td>
         <td>${empresaBadgeHtml(r.EmpresaDestino)}${r.EmpresaDestino}</td>
         <td class="produto-name" title="${r.Produto}">${r.Produto}</td>
         <td class="num-cell">${fmtNum(r.Qte)}</td>
         <td class="num-cell">${fmtMoney(r.Total)}</td>
+        <td>${r.AceiteDado ? `<span class="chip c-ok">ACEITE DADO</span>` : `<span class="chip c-warning">ACEITE NÃO DADO</span>`}</td>
+        <td>${r.DataAceite ? fmtDate(r.DataAceite) : "—"}</td>
+        <td class="num-cell">${r.DiasParaAceite === null || r.DiasParaAceite === undefined ? "—" : fmtNum(r.DiasParaAceite)}</td>
       </tr>
     `).join("");
   }
@@ -3265,13 +3290,23 @@ render();
 
   empresaOrigemSel.addEventListener("change", render);
   empresaDestinoSel.addEventListener("change", render);
+  aceiteSel.addEventListener("change", render);
   document.getElementById("clear-filters-transf").addEventListener("click", () => {
-    empresaOrigemSel.value = ""; empresaDestinoSel.value = ""; render();
+    empresaOrigemSel.value = ""; empresaDestinoSel.value = ""; aceiteSel.value = ""; render();
   });
   document.getElementById("copy-transf-btn").addEventListener("click", () => {
-    const headers = ["Data", "Origem", "Destino", "Produto", "Qtd", "Valor"];
-    const rowsOut = lastRenderedDetalhe.map(r => [r.Data, r.EmpresaOrigem, r.EmpresaDestino, r.Produto, r.Qte, r.Total]);
+    const headers = ["Data", "Origem", "Destino", "Produto", "Qtd", "Valor", "Aceite", "Data do Aceite", "Dias até Aceite"];
+    const rowsOut = lastRenderedDetalhe.map(r => [r.Data, r.EmpresaOrigem, r.EmpresaDestino, r.Produto, r.Qte, r.Total, r.AceiteDado ? "ACEITE DADO" : "ACEITE NÃO DADO", r.DataAceite || "", r.DiasParaAceite === null || r.DiasParaAceite === undefined ? "" : r.DiasParaAceite]);
     copyToExcel(headers, rowsOut, document.getElementById("copy-transf-status"));
+  });
+
+  const kpiPendenteEl = document.getElementById("kpi-transf-pendente");
+  kpiPendenteEl.addEventListener("click", () => {
+    aceiteSel.value = aceiteSel.value === "pendente" ? "" : "pendente";
+    render();
+  });
+  kpiPendenteEl.addEventListener("keydown", (ev) => {
+    if (ev.key === "Enter" || ev.key === " ") { ev.preventDefault(); kpiPendenteEl.click(); }
   });
 
   window.renderTransferencias = render;
