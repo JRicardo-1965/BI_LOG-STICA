@@ -1291,7 +1291,7 @@
               <th data-key="Empresa"><button>Empresa <span class="sort-arrow"></span></button></th>
               <th data-key="Produto"><button>Produto <span class="sort-arrow"></span></button></th>
               <th data-key="MetaRevenda"><button>Meta<br>Revenda <span class="sort-arrow"></span></button></th>
-              <th data-key="MetaPromotores"><button>Meta<br>Promot. <span class="sort-arrow"></span></button></th>
+              <th data-key="MetaPromotores"><button>Meta<br>Afil. <span class="sort-arrow"></span></button></th>
               <th data-key="MetaParceiros"><button>Meta<br>Parceiros <span class="sort-arrow"></span></button></th>
               <th data-key="TotalMeta"><button>Total<br>Meta <span class="sort-arrow"></span></button></th>
               <th data-key="TotalMetaMaisX"><button>Meta<br><span id="th-meta-maisx-pct">+80%</span> <span class="sort-arrow"></span></button></th>
@@ -1315,7 +1315,7 @@
       <div class="empty-state" id="empty-state-meta" style="display:none;">Nenhum item corresponde aos filtros aplicados.</div>
 
       <div class="footnote">
-        Total da Meta = Meta Revenda + Meta Promotores + Meta Parceiros (segmentos 27/28/29, mês corrente em <code>METAS_MENSAIS_EMPRESAS</code>, campo <code>QuantidadeNormal</code>) &middot;
+        Total da Meta = Meta Revenda + Meta Afiliados + Meta Parceiros (segmentos 27/28/29, mês corrente em <code>METAS_MENSAIS_EMPRESAS</code>, campo <code>QuantidadeNormal</code>) &middot;
         Consumo Mensal = soma das SAÍDAS (vendas, <code>003_SAIDA_POR_VENDAS</code>) do mês em curso (dia 1 até hoje) — não inclui transferências &middot;
         Tendência Consumo = projeção do fechamento do mês, a partir do ritmo de vendas até hoje: (Consumo Mensal ÷ dias já passados no mês) × dias totais do mês &middot;
         % Meta Atingido = Consumo Mensal ÷ Total da Meta &middot; % Meta Projetado = Tendência Consumo ÷ Total da Meta &middot; "— sem meta" aparece quando o produto não tem meta cadastrada nesse mês (0% seria enganoso, pareceria meta não batida) &middot;
@@ -2538,7 +2538,7 @@ render();
   });
 
   document.getElementById("copy-meta-btn").addEventListener("click", () => {
-    const headers = ["Empresa", "Produto", "Meta Revenda", "Meta Promotores", "Meta Parceiros", "Total da Meta", "Total Meta +X%", "Consumo Mensal", "% Meta Atingido", "Tendência Consumo", "% Meta Projetado", "Estoque Atual", "Mínimo", "Ponto Ressuprimento", "Máximo", "Pedir em (dias)", "Data Prevista Pedido", "Situação"];
+    const headers = ["Empresa", "Produto", "Meta Revenda", "Meta Afiliados", "Meta Parceiros", "Total da Meta", "Total Meta +X%", "Consumo Mensal", "% Meta Atingido", "Tendência Consumo", "% Meta Projetado", "Estoque Atual", "Mínimo", "Ponto Ressuprimento", "Máximo", "Pedir em (dias)", "Data Prevista Pedido", "Situação"];
     const rowsOut = lastRenderedRows.map(r => [
       r.Empresa, r.Produto, r.MetaRevenda, r.MetaPromotores, r.MetaParceiros, r.TotalMeta, r.TotalMetaMaisX,
       r.ConsumoMensal, r._pctAtingido === null ? "" : r._pctAtingido, r.TendenciaConsumo, r._pctProjetado === null ? "" : r._pctProjetado,
