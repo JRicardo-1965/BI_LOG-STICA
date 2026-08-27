@@ -1624,7 +1624,7 @@
     <div id="tab-content-estoquefilial" class="is-hidden">
     <div class="panel">
       <p class="tab-context-note">
-        <b>Estoque por Filial</b> · estoque atual de chips cruzado com filial &middot; colunas de "Em trânsito" aparecem quando existe transferência com aceite pendente na rota.
+        <b>Estoque por Filial</b> · estoque atual de chips cruzado com filial — mostra <b>todas as empresas</b>, independente do seu acesso nas demais abas &middot; colunas de "Em trânsito" aparecem quando existe transferência com aceite pendente na rota.
       </p>
       <div class="filters" style="margin-top:10px;">
         <span class="result-count" id="result-count-estoquefilial"></span>
@@ -1757,6 +1757,12 @@ const RAW_META_PRODUTO = __META_PRODUTO_JSON__;
 const RAW_PEDIDOS = __PEDIDOS_JSON__;
 const RAW_PEDIDOS_RESUMO = __PEDIDOS_RESUMO_JSON__;
 const RAW_TRANSFERENCIAS = __TRANSFERENCIAS_JSON__;
+// Estoque por Filial e' a unica visao que mostra TODAS as empresas pra TODO mundo, mesmo no
+// backend hospedado com login - os demais dados (RAW_DATA, RAW_TRANSFERENCIAS acima, etc.) ficam
+// escopados por usuario normalmente. No local/Artifact (sem login) esses dois vem identicos aos
+// de cima, sem diferenca de comportamento.
+const RAW_ESTOQUE_TODAS_EMPRESAS = __ESTOQUE_TODAS_EMPRESAS_JSON__;
+const RAW_TRANSFERENCIAS_TODAS_EMPRESAS = __TRANSFERENCIAS_TODAS_EMPRESAS_JSON__;
 
 // Preenchidos só pelo backend hospedado (Render) a cada login, sessão a sessão — o build.js do
 // Artifact público e do dashboard local sempre substitui os dois por string vazia, então o bloco
@@ -3362,8 +3368,13 @@ render();
   let lastState = null;
 
   function render() {
-    // `data` (global, definido lá em cima) = RAW_DATA sem FRETE, ja por Empresa+Produto com EstoqueAtual.
-    const estoqueRows = data.filter(r => r.EstoqueAtual !== null && r.EstoqueAtual !== undefined);
+    // IMPORTANTE: usa RAW_ESTOQUE_TODAS_EMPRESAS (nao a `data` global filtrada por usuario) -
+    // Estoque por Filial e' a unica visao onde todo mundo ve o estoque de TODAS as empresas,
+    // mesmo no backend hospedado com login. Os demais filtros (empresa/produto/situacao nas
+    // outras abas) continuam vigorando normalmente - so essa aba foge da regra.
+    const estoqueRows = RAW_ESTOQUE_TODAS_EMPRESAS
+      .filter(r => r.Produto !== "FRETE")
+      .filter(r => r.EstoqueAtual !== null && r.EstoqueAtual !== undefined);
 
     const produtos = Array.from(new Set(estoqueRows.map(r => r.Produto))).sort((a, b) => a.localeCompare(b, "pt-BR"));
 
@@ -3388,7 +3399,7 @@ render();
     const transitoRotasSeen = new Set();
     const transitoMap = {};
 
-    RAW_TRANSFERENCIAS.filter(r => !r.AceiteDado).forEach(r => {
+    RAW_TRANSFERENCIAS_TODAS_EMPRESAS.filter(r => !r.AceiteDado).forEach(r => {
       const rotaKey = `${r.EmpresaOrigem}→${r.EmpresaDestino}`;
       if (!transitoRotasSeen.has(rotaKey)) {
         transitoRotasSeen.add(rotaKey);

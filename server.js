@@ -286,6 +286,14 @@ app.get('/', requireAuth, (req, res) => {
   const transferencias = filterTransferencias(latestData.transferencias, allowed);
   const meta = latestData.meta || {};
 
+  // Estoque por Filial e' a UNICA visao que foge da regra de "cada usuario so ve as empresas
+  // que tem vinculo" - a pedido do usuario, todo mundo precisa saber o estoque de TODAS as
+  // filiais ali, mesmo que os outros filtros (Estoque & Ressuprimento, Giro & Estoque, Meta,
+  // Pedidos, Transferencias) continuem escopados por USUARIOS_EMPRESAS normalmente. Por isso
+  // esses dois usam latestData.* direto (sem filterByEmpresas/filterTransferencias).
+  const estoqueTodasEmpresas = latestData.estoque || [];
+  const transferenciasTodasEmpresas = latestData.transferencias || [];
+
   const html = TEMPLATE
     .replaceAll('__VERSION__', 'hospedado')
     .replaceAll('__RELEASE__', 'login')
@@ -299,6 +307,8 @@ app.get('/', requireAuth, (req, res) => {
     .replaceAll('__PEDIDOS_JSON__', jsonForScript(pedidos))
     .replaceAll('__PEDIDOS_RESUMO_JSON__', jsonForScript(pedidosResumo))
     .replaceAll('__TRANSFERENCIAS_JSON__', jsonForScript(transferencias))
+    .replaceAll('__ESTOQUE_TODAS_EMPRESAS_JSON__', jsonForScript(estoqueTodasEmpresas))
+    .replaceAll('__TRANSFERENCIAS_TODAS_EMPRESAS_JSON__', jsonForScript(transferenciasTodasEmpresas))
     .replaceAll('__TODAY_ISO__', meta.TodayISO || new Date().toISOString().slice(0, 10))
     .replaceAll('__PERIODO_TEXTO__', meta.PeriodoTexto || '')
     .replaceAll('__FONTE_ATUALIZADA_EM__', meta.FonteAtualizadaEm || 'desconhecido')
