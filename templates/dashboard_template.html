@@ -145,9 +145,7 @@
     padding: 1px 6px;
     border-radius: 100px;
     vertical-align: middle;
-    text-decoration: none;
   }
-  a.version-tag:hover { color: rgba(255,255,255,0.9); cursor: pointer; }
 
   .header-right { display: flex; align-items: center; gap: 10px; }
   .header-right .update-badge,
@@ -1080,7 +1078,6 @@
       <div class="header-right">
         <span class="version-tag" title="Corresponde à Version exibida no menu de versões do Artifact — sobe a cada publicação, inclusive as automáticas">Version __VERSION__</span>
         <span class="version-tag" title="Número de release: só muda quando uma funcionalidade ou visual novo é lançado">Release __RELEASE__</span>
-        <a class="version-tag" href="https://www.siterastreio.com.br/" target="_blank" rel="noopener">Rastreamento</a>
         <span class="update-badge" id="update-badge" title="Última vez que a rotina de atualização rodou com sucesso">
           <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>
           Dados de <b>__FONTE_ATUALIZADA_EM__</b> <span id="freshness-age"></span>
@@ -1107,6 +1104,7 @@
       <button class="tab-btn" id="tab-btn-giro" type="button" data-tab="giro">Giro &amp; Estoque</button>
       <button class="tab-btn" id="tab-btn-pedidos" type="button" data-tab="pedidos">Faturamento &amp; Pedidos</button>
       <button class="tab-btn" id="tab-btn-transferencias" type="button" data-tab="transferencias">Transferências</button>
+      <button class="tab-btn" id="tab-btn-estoquefilial" type="button" data-tab="estoquefilial">Estoque por Filial</button>
     </div>
 
     <div id="tab-content-estoque">
@@ -1619,6 +1617,31 @@
         Valor = preço de saída × quantidade transferida — é o valor de movimentação entre filiais, não lucro &middot;
         <b>ACEITE DADO</b> = o destino já confirmou o recebimento (gera uma entrada real em <code>ENTRADAS</code>, ligada por <code>TRANFERÊNCIA_PAI_ACEITE</code>) &middot; <b>ACEITE NÃO DADO</b> = mercadoria já saiu da origem, mas o destino ainda não confirmou &middot; Dias até Aceite = Data do Aceite − Data da transferência &middot;
         Histórico completo disponível (sem janela de tempo) &middot; clique nos cabeçalhos das tabelas pra ordenar.
+      </div>
+    </div>
+    </div>
+
+    <div id="tab-content-estoquefilial" class="is-hidden">
+    <div class="panel">
+      <p class="tab-context-note">
+        <b>Estoque por Filial</b> · estoque atual de chips cruzado com filial &middot; colunas de "Em trânsito" aparecem quando existe transferência com aceite pendente na rota.
+      </p>
+      <div class="filters" style="margin-top:10px;">
+        <span class="result-count" id="result-count-estoquefilial"></span>
+        <button class="clear-btn copy-btn" id="copy-estoquefilial-btn" type="button">📋 Copiar para Excel</button>
+        <span class="copy-status" id="copy-estoquefilial-status"></span>
+      </div>
+      <div class="table-scroll">
+        <table id="table-estoquefilial">
+          <thead id="thead-estoquefilial"></thead>
+          <tbody id="tbody-estoquefilial"></tbody>
+          <tfoot id="tfoot-estoquefilial"></tfoot>
+        </table>
+      </div>
+      <div class="footnote">
+        Estoque atual por filial (<code>002_ESTOQUE_ATUAL</code>) &middot;
+        colunas <b>EM TRÂNSITO</b> aparecem quando existe transferência com <b>ACEITE NÃO DADO</b> na rota (mercadoria já saiu da origem, destino ainda não confirmou) &middot; assim que o destino dá o aceite, a mercadoria some do trânsito e passa a contar no estoque normal da filial de destino &middot;
+        "Total Geral" soma todas as colunas da linha, inclusive trânsito.
       </div>
     </div>
     </div>
@@ -2313,7 +2336,7 @@ render();
 })();
 
 (function initTabs() {
-  const tabs = ["estoque", "meta", "giro", "pedidos", "transferencias"];
+  const tabs = ["estoque", "meta", "giro", "pedidos", "transferencias", "estoquefilial"];
   const btns = {};
   const contents = {};
   for (const t of tabs) {
@@ -2331,6 +2354,7 @@ render();
     if (tab === "giro" && window.renderGiro) window.renderGiro();
     if (tab === "pedidos" && window.renderPedidos) window.renderPedidos();
     if (tab === "transferencias" && window.renderTransferencias) window.renderTransferencias();
+    if (tab === "estoquefilial" && window.renderEstoqueFilial) window.renderEstoqueFilial();
   }
 
   for (const t of tabs) {
@@ -3313,6 +3337,124 @@ render();
   });
 
   window.renderTransferencias = render;
+})();
+
+(function initEstoqueFilialTab() {
+  // Ordem fixa das filiais (Matriz primeiro, depois alfabetico) - bate com a planilha de referencia
+  // do usuario. Filial que nao estiver nessa lista (nova filial futura) cai no final, alfabetico.
+  // Usa includes() em vez de igualdade exata pq o nome da Matriz varia entre tabelas
+  // (ex: "AQUI TEM + MATRIZ" em TRANFERENCIA_PAI, mas "AQUI TEM + NE - MATRIZ" em 002_ESTOQUE_ATUAL).
+  const EMPRESA_ORDER = ["MATRIZ", "BA", "CO", "MG", "NO", "SPI"];
+  function empresaOrderIndex(nomeAbrev) {
+    const idx = EMPRESA_ORDER.findIndex(o => nomeAbrev.includes(o));
+    return idx === -1 ? 999 : idx;
+  }
+  // Nome de coluna: usa o nome tal como vem da fonte (ex: "NE - MATRIZ" em 002_ESTOQUE_ATUAL),
+  // sem limpar - a pedido do usuario.
+  function filialLabel(nomeAbrev) {
+    return nomeAbrev;
+  }
+
+  const thead = document.getElementById("thead-estoquefilial");
+  const tbody = document.getElementById("tbody-estoquefilial");
+  const tfoot = document.getElementById("tfoot-estoquefilial");
+
+  let lastState = null;
+
+  function render() {
+    // `data` (global, definido lá em cima) = RAW_DATA sem FRETE, ja por Empresa+Produto com EstoqueAtual.
+    const estoqueRows = data.filter(r => r.EstoqueAtual !== null && r.EstoqueAtual !== undefined);
+
+    const produtos = Array.from(new Set(estoqueRows.map(r => r.Produto))).sort((a, b) => a.localeCompare(b, "pt-BR"));
+
+    const empresas = Array.from(new Set(estoqueRows.map(r => r.Empresa))).sort((a, b) => {
+      const ra = empresaOrderIndex(empresaAbrev(a));
+      const rb = empresaOrderIndex(empresaAbrev(b));
+      if (ra !== rb) return ra - rb;
+      return empresaAbrev(a).localeCompare(empresaAbrev(b), "pt-BR");
+    });
+
+    const estoqueMap = {};
+    for (const r of estoqueRows) {
+      estoqueMap[r.Produto] = estoqueMap[r.Produto] || {};
+      estoqueMap[r.Produto][r.Empresa] = (estoqueMap[r.Produto][r.Empresa] || 0) + Number(r.EstoqueAtual || 0);
+    }
+
+    // Rotas com transferencia pendente (ACEITE NAO DADO) - viram colunas extras "EM TRANSITO".
+    // So conta o que ainda NAO foi aceito: depois que o destino da o aceite, a mercadoria ja virou
+    // uma entrada real (ver aba Transferencias) e ja esta contada no estoque normal da filial -
+    // contar de novo aqui seria duplicar.
+    const transitoRotas = [];
+    const transitoRotasSeen = new Set();
+    const transitoMap = {};
+
+    RAW_TRANSFERENCIAS.filter(r => !r.AceiteDado).forEach(r => {
+      const rotaKey = `${r.EmpresaOrigem}→${r.EmpresaDestino}`;
+      if (!transitoRotasSeen.has(rotaKey)) {
+        transitoRotasSeen.add(rotaKey);
+        transitoRotas.push({
+          key: rotaKey,
+          label: `EM TRÂNSITO<br>${filialLabel(empresaAbrev(r.EmpresaOrigem))} → ${filialLabel(empresaAbrev(r.EmpresaDestino))}`,
+          labelFlat: `EM TRÂNSITO ${filialLabel(empresaAbrev(r.EmpresaOrigem))} → ${filialLabel(empresaAbrev(r.EmpresaDestino))}`,
+        });
+      }
+      transitoMap[rotaKey] = transitoMap[rotaKey] || {};
+      transitoMap[rotaKey][r.Produto] = (transitoMap[rotaKey][r.Produto] || 0) + Number(r.Qte || 0);
+    });
+    transitoRotas.sort((a, b) => a.key.localeCompare(b.key, "pt-BR"));
+
+    const empresaCols = empresas.map(e => ({ key: e, label: filialLabel(empresaAbrev(e)), labelFlat: filialLabel(empresaAbrev(e)), isTransito: false }));
+    const allCols = [...empresaCols, ...transitoRotas.map(t => ({ ...t, isTransito: true }))];
+
+    thead.innerHTML = `<tr><th>CHIPS</th>${allCols.map(c => `<th class="num-cell"${c.isTransito ? ' style="color:var(--warning);"' : ""}>${c.label}</th>`).join("")}<th class="num-cell">Total Geral</th></tr>`;
+
+    const colTotals = {};
+    allCols.forEach(c => colTotals[c.key] = 0);
+    let grandTotal = 0;
+    let bodyHtml = "";
+
+    for (const produto of produtos) {
+      let rowTotal = 0;
+      const cellsHtml = allCols.map(c => {
+        const v = c.isTransito
+          ? ((transitoMap[c.key] && transitoMap[c.key][produto]) || 0)
+          : ((estoqueMap[produto] && estoqueMap[produto][c.key]) || 0);
+        rowTotal += v;
+        colTotals[c.key] += v;
+        return `<td class="num-cell"${c.isTransito ? ' style="color:var(--warning);"' : ""}>${v ? fmtNum(v) : "—"}</td>`;
+      }).join("");
+      grandTotal += rowTotal;
+      bodyHtml += `<tr><td>${produto}</td>${cellsHtml}<td class="num-cell" style="font-weight:700;">${fmtNum(rowTotal)}</td></tr>`;
+    }
+    tbody.innerHTML = bodyHtml;
+
+    const footCells = allCols.map(c => `<td class="num-cell">${fmtNum(colTotals[c.key])}</td>`).join("");
+    tfoot.innerHTML = `<tr style="font-weight:700;"><td>Total Geral</td>${footCells}<td class="num-cell">${fmtNum(grandTotal)}</td></tr>`;
+
+    document.getElementById("result-count-estoquefilial").textContent =
+      `${produtos.length} produtos × ${empresas.length} filiais` + (transitoRotas.length ? ` + ${transitoRotas.length} rota(s) em trânsito` : "");
+
+    lastState = { produtos, allCols, estoqueMap, transitoMap, colTotals, grandTotal };
+  }
+
+  document.getElementById("copy-estoquefilial-btn").addEventListener("click", () => {
+    if (!lastState) return;
+    const { produtos, allCols, estoqueMap, transitoMap, colTotals, grandTotal } = lastState;
+    const headers = ["CHIPS", ...allCols.map(c => c.labelFlat), "Total Geral"];
+    const rows = produtos.map(p => {
+      let rowTotal = 0;
+      const cells = allCols.map(c => {
+        const v = c.isTransito ? ((transitoMap[c.key] && transitoMap[c.key][p]) || 0) : ((estoqueMap[p] && estoqueMap[p][c.key]) || 0);
+        rowTotal += v;
+        return v;
+      });
+      return [p, ...cells, rowTotal];
+    });
+    rows.push(["Total Geral", ...allCols.map(c => colTotals[c.key]), grandTotal]);
+    copyToExcel(headers, rows, document.getElementById("copy-estoquefilial-status"));
+  });
+
+  window.renderEstoqueFilial = render;
 })();
 
 </script>
