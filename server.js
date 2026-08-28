@@ -239,8 +239,6 @@ app.post('/api/sync', express.json({ limit: '25mb' }), async (req, res) => {
       metas: body.metas || [],
       metaSegmento: body.metaSegmento || [],
       metaProduto: body.metaProduto || [],
-      pedidos: body.pedidos || [],
-      pedidosResumo: body.pedidosResumo || { Hoje: { PorEmpresa: [] }, Mes: { PorEmpresa: [] }, Projecao: { PorEmpresa: [] } },
       transferencias: body.transferencias || [],
       meta: body.meta || {},
       usuarios,
@@ -281,8 +279,6 @@ app.get('/', requireAuth, (req, res) => {
   const metas = filterByEmpresas(latestData.metas, allowed);
   const metaSegmento = filterByEmpresas(latestData.metaSegmento, allowed);
   const metaProduto = filterByEmpresas(latestData.metaProduto, allowed);
-  const pedidos = filterByEmpresas(latestData.pedidos, allowed);
-  const pedidosResumo = filterResumoPedidos(latestData.pedidosResumo, allowed);
   const transferencias = filterTransferencias(latestData.transferencias, allowed);
   const meta = latestData.meta || {};
 
@@ -304,8 +300,6 @@ app.get('/', requireAuth, (req, res) => {
     .replaceAll('__METAS_JSON__', jsonForScript(metas))
     .replaceAll('__META_SEGMENTO_JSON__', jsonForScript(metaSegmento))
     .replaceAll('__META_PRODUTO_JSON__', jsonForScript(metaProduto))
-    .replaceAll('__PEDIDOS_JSON__', jsonForScript(pedidos))
-    .replaceAll('__PEDIDOS_RESUMO_JSON__', jsonForScript(pedidosResumo))
     .replaceAll('__TRANSFERENCIAS_JSON__', jsonForScript(transferencias))
     .replaceAll('__ESTOQUE_TODAS_EMPRESAS_JSON__', jsonForScript(estoqueTodasEmpresas))
     .replaceAll('__TRANSFERENCIAS_TODAS_EMPRESAS_JSON__', jsonForScript(transferenciasTodasEmpresas))
