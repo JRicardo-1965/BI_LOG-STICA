@@ -550,6 +550,11 @@
   .num-cell { font-family: var(--mono); font-variant-numeric: tabular-nums; text-align: right; }
   .produto-name { font-weight: 600; }
 
+  /* Curva ABC (Giro & Estoque) - cabecalhos centralizados a pedido do usuario, dados continuam
+     alinhados normalmente (numeros a direita via .num-cell, texto a esquerda). */
+  #tbl-giro-abc thead th { text-align: center; white-space: normal; line-height: 1.25; }
+  #tbl-giro-abc thead th button { justify-content: center; text-align: center; }
+
   .table-compact { min-width: 0; width: 100%; font-size: 10.5px; table-layout: fixed; }
   .table-compact thead th {
     white-space: normal;
@@ -1362,7 +1367,7 @@
           <span class="copy-status" id="copy-abc-status"></span>
         </div>
         <div class="table-scroll">
-          <table>
+          <table id="tbl-giro-abc">
             <thead>
               <tr>
                 <th data-key="Empresa"><button>Empresa <span class="sort-arrow"></span></button></th>
@@ -1370,6 +1375,7 @@
                 <th class="num-cell" data-key="VendaMesValor"><button>Valor Vendido<br>no Mês <span class="sort-arrow"></span></button></th>
                 <th class="num-cell" data-key="_mediaDiariaMes"><button>Média Diária<br>no Mês <span class="sort-arrow"></span></button></th>
                 <th class="num-cell" data-key="VendaMes"><button>Qtd Vendida<br>no Mês <span class="sort-arrow"></span></button></th>
+                <th class="num-cell" data-key="_qtdMediaDiariaMes"><button>Qtd Média<br>Diária no Mês <span class="sort-arrow"></span></button></th>
                 <th class="num-cell" data-key="_pctDoTotal"><button>% do<br>Total <span class="sort-arrow"></span></button></th>
                 <th class="num-cell" data-key="_pctAcumulado"><button>% Acumu-<br>lado <span class="sort-arrow"></span></button></th>
                 <th data-key="_classeAbc"><button>Classe <span class="sort-arrow"></span></button></th>
@@ -1383,6 +1389,7 @@
           Curva ABC por VALOR vendido no mês corrente (<code>003_SAIDA_POR_VENDAS</code>/<code>VENDAS_VENDEDOR</code>), não só quantidade &middot;
           Classe A = produtos que somam até 80% do valor total vendido (ordenados do maior pro menor) &middot; Classe B = até 95% acumulado &middot; Classe C = os 5% finais &middot;
           Média Diária no Mês = Valor Vendido no Mês ÷ dias já decorridos do mês corrente — ritmo médio de venda por dia, não uma projeção &middot;
+          Qtd Média Diária no Mês = Qtd Vendida no Mês ÷ dias já decorridos do mês corrente — mesma lógica, em unidades &middot;
           Prioridade de atenção/reposição: A &gt; B &gt; C.
         </div>
       </div>
@@ -2551,6 +2558,7 @@ render();
       r._pctAcumulado = Math.round(acumulado * 100) / 100;
       r._classeAbc = acumulado <= 80 ? "A" : (acumulado <= 95 ? "B" : "C");
       r._mediaDiariaMes = Math.round((r.VendaMesValor / diaDoMesAbc) * 100) / 100;
+      r._qtdMediaDiariaMes = Math.round((r.VendaMes / diaDoMesAbc) * 100) / 100;
     }
     return { rows, totalValor };
   }
@@ -2580,6 +2588,7 @@ render();
         <td class="num-cell">${fmtMoney(r.VendaMesValor)}</td>
         <td class="num-cell">${fmtMoney(r._mediaDiariaMes)}</td>
         <td class="num-cell">${fmtNum(r.VendaMes)}</td>
+        <td class="num-cell">${fmtNum(r._qtdMediaDiariaMes, 1)}</td>
         <td class="num-cell">${fmtNum(r._pctDoTotal, 1)}%</td>
         <td class="num-cell">${fmtNum(r._pctAcumulado, 1)}%</td>
         <td><span class="chip ${classeBadge[r._classeAbc]}">${r._classeAbc}</span></td>
@@ -2594,8 +2603,8 @@ render();
     empresaSelAbc.value = ""; classeSel.value = ""; renderAbc();
   });
   document.getElementById("copy-abc-btn").addEventListener("click", () => {
-    const headers = ["Empresa", "Produto", "Valor Vendido no Mês", "Média Diária no Mês", "Qtd Vendida no Mês", "% do Total", "% Acumulado", "Classe"];
-    const rowsOut = lastRenderedAbc.map(r => [r.Empresa, r.Produto, r.VendaMesValor, r._mediaDiariaMes, r.VendaMes, r._pctDoTotal, r._pctAcumulado, r._classeAbc]);
+    const headers = ["Empresa", "Produto", "Valor Vendido no Mês", "Média Diária no Mês", "Qtd Vendida no Mês", "Qtd Média Diária no Mês", "% do Total", "% Acumulado", "Classe"];
+    const rowsOut = lastRenderedAbc.map(r => [r.Empresa, r.Produto, r.VendaMesValor, r._mediaDiariaMes, r.VendaMes, r._qtdMediaDiariaMes, r._pctDoTotal, r._pctAcumulado, r._classeAbc]);
     copyToExcel(headers, rowsOut, document.getElementById("copy-abc-status"));
   });
 
