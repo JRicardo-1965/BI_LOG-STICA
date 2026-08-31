@@ -60,8 +60,30 @@ if (fs.existsSync(DATA_FILE)) {
 
 const app = express();
 app.disable('x-powered-by');
+// trust proxy: o Render fica atras de um proxy reverso - sem isso req.ip devolve o IP interno
+// do proxy, nao o do usuario de verdade.
+app.set('trust proxy', true);
 app.use(helmet({ contentSecurityPolicy: false })); // o dashboard tem <style>/<script> inline, então desliga só o CSP do helmet
 app.use(cookieParser());
+
+// --- log de acessos por aba (fase 2 - ver [[bi-ressuprimento-local-dashboard]] memoria) ------
+// Mesmo padrao dos outros BIs: buffer em memoria aqui (efemero, some a cada redeploy),
+// consumido pelo proprio extract_bi.ps1 deste projeto (pull -> staging local -> INSERT
+// reaproveitando a conexao ja testada).
+let eventosAba = [];
+let proximoEventoAbaId = 1;
+const SISTEMA_PROPRIO = 'LOGISTICA';
+
+function registrarAba(email, aba, ip) {
+  eventosAba.push({
+    id: proximoEventoAbaId++,
+    usuario: email,
+    sistema: SISTEMA_PROPRIO,
+    dataHora: new Date().toISOString(),
+    ip: ip || '',
+    aba
+  });
+}
 
 // --- helpers ---------------------------------------------------------------
 
@@ -255,6 +277,26 @@ app.post('/api/sync', express.json({ limit: '25mb' }), async (req, res) => {
     console.error('Erro processando /api/sync:', err);
     res.status(500).json({ ok: false, error: 'Erro ao processar sincronização.' });
   }
+});
+
+// --- log de acessos por aba (fase 2) ------------------------------------------
+app.post('/api/registrar-aba', requireAuth, express.json(), (req, res) => {
+  const aba = String((req.body && req.body.aba) || '').slice(0, 100);
+  if (!aba) return res.status(400).json({ ok: false, error: 'Informe a aba.' });
+  registrarAba(req.userEmail, aba, req.ip);
+  res.json({ ok: true });
+});
+
+app.get('/api/eventos-aba', (req, res) => {
+  if (req.query.secret !== SYNC_SECRET) return res.status(401).json({ ok: false, error: 'Não autorizado.' });
+  res.json({ ok: true, eventos: eventosAba });
+});
+
+app.post('/api/eventos-aba/confirmar', express.json(), (req, res) => {
+  if (req.query.secret !== SYNC_SECRET) return res.status(401).json({ ok: false, error: 'Não autorizado.' });
+  const ateId = Number((req.body && req.body.ateId) || 0);
+  eventosAba = eventosAba.filter((e) => e.id > ateId);
+  res.json({ ok: true, restantes: eventosAba.length });
 });
 
 // --- páginas -----------------------------------------------------------------

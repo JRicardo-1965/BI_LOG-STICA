@@ -2221,6 +2221,15 @@ render();
     if (tab === "giro" && window.renderGiro) window.renderGiro();
     if (tab === "transferencias" && window.renderTransferencias) window.renderTransferencias();
     if (tab === "estoquefilial" && window.renderEstoqueFilial) window.renderEstoqueFilial();
+
+    // log de acessos por aba (fase 2) - so na versao hospedada, fire-and-forget.
+    if (HOSTED_SESSION) {
+      fetch("/api/registrar-aba", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ aba: tab })
+      }).catch(() => {});
+    }
   }
 
   for (const t of tabs) {
