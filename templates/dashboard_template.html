@@ -552,8 +552,10 @@
 
   /* Curva ABC (Giro & Estoque) - cabecalhos centralizados a pedido do usuario, dados continuam
      alinhados normalmente (numeros a direita via .num-cell, texto a esquerda). */
-  #tbl-giro-abc thead th { text-align: center; white-space: normal; line-height: 1.25; }
-  #tbl-giro-abc thead th button { justify-content: center; text-align: center; }
+  #tbl-giro-abc thead th,
+  #tbl-abc-resumo-produto thead th { text-align: center; white-space: normal; line-height: 1.25; }
+  #tbl-giro-abc thead th button,
+  #tbl-abc-resumo-produto thead th button { justify-content: center; text-align: center; }
 
   .table-compact { min-width: 0; width: 100%; font-size: 10.5px; table-layout: fixed; }
   .table-compact thead th {
@@ -1361,6 +1363,7 @@
             </select>
           </div>
           <button class="clear-btn" id="abc-resumo-btn" type="button">📊 Resumo por Classe</button>
+          <button class="clear-btn" id="abc-resumo-produto-btn" type="button">📦 Resumo por Produto</button>
           <div class="spacer"></div>
           <span class="result-count" id="result-count-abc"></span>
           <button class="clear-btn" id="clear-filters-abc">Limpar filtros</button>
@@ -1612,6 +1615,35 @@
     </div>
     <div class="modal-close-row">
       <button class="modal-close-btn" id="abc-resumo-close-btn" type="button">Fechar</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-overlay is-hidden" id="abc-resumo-produto-modal">
+  <div class="modal-card modal-card-wide" role="dialog" aria-modal="true" aria-labelledby="abc-resumo-produto-title">
+    <h2 id="abc-resumo-produto-title">Resumo por Produto — todas as empresas</h2>
+    <p class="modal-sub" id="abc-resumo-produto-sub">Venda do mês somada em toda a rede, independente de empresa/filial</p>
+    <div class="table-scroll" style="max-height: 55vh;">
+      <table id="tbl-abc-resumo-produto">
+        <thead>
+          <tr>
+            <th data-key="Produto"><button>Produto <span class="sort-arrow"></span></button></th>
+            <th class="num-cell" data-key="_numFiliais"><button>Nº de<br>Filiais <span class="sort-arrow"></span></button></th>
+            <th class="num-cell" data-key="VendaMesValor"><button>Valor Vendido<br>no Mês <span class="sort-arrow"></span></button></th>
+            <th class="num-cell" data-key="VendaMes"><button>Qtd Vendida<br>no Mês <span class="sort-arrow"></span></button></th>
+            <th class="num-cell" data-key="_pctDoTotal"><button>% do<br>Total <span class="sort-arrow"></span></button></th>
+            <th data-key="_classeAbc"><button>Classe <span class="sort-arrow"></span></button></th>
+          </tr>
+        </thead>
+        <tbody id="abc-resumo-produto-tbody"></tbody>
+      </table>
+    </div>
+    <div class="modal-close-row" style="justify-content: space-between; align-items: center;">
+      <div style="display:flex; align-items:center; gap:8px;">
+        <button class="clear-btn copy-btn" id="copy-abc-resumo-produto-btn" type="button">📋 Copiar para Excel</button>
+        <span class="copy-status" id="copy-abc-resumo-produto-status"></span>
+      </div>
+      <button class="modal-close-btn" id="abc-resumo-produto-close-btn" type="button">Fechar</button>
     </div>
   </div>
 </div>
@@ -2588,6 +2620,34 @@ render();
     return { rows, totalValor };
   }
 
+  // Curva ABC agregada por Produto, somando a venda do mes de TODAS as empresas antes de
+  // rankear/classificar - usada pelos popups "Resumo por Classe" e "Resumo por Produto", que
+  // devem contar/classificar por produto de verdade, nao por combinacao empresa+produto (senao
+  // o mesmo produto vendido em 5 filiais contaria como 5 "produtos" diferentes).
+  function computeAbcPorProduto() {
+    const base = dadosBase.filter(r => (r.VendaMesValor || 0) > 0);
+    const porProduto = new Map();
+    for (const r of base) {
+      let g = porProduto.get(r.Produto);
+      if (!g) { g = { Produto: r.Produto, VendaMesValor: 0, VendaMes: 0, _filiais: new Set() }; porProduto.set(r.Produto, g); }
+      g.VendaMesValor += (r.VendaMesValor || 0);
+      g.VendaMes += (r.VendaMes || 0);
+      g._filiais.add(r.Empresa);
+    }
+    let rows = [...porProduto.values()].map(g => ({ ...g, _numFiliais: g._filiais.size }));
+    rows.sort((a, b) => b.VendaMesValor - a.VendaMesValor);
+    const totalValor = rows.reduce((s, r) => s + r.VendaMesValor, 0);
+    let acumulado = 0;
+    for (const r of rows) {
+      const pct = totalValor > 0 ? (r.VendaMesValor / totalValor) * 100 : 0;
+      acumulado += pct;
+      r._pctDoTotal = Math.round(pct * 100) / 100;
+      r._pctAcumulado = Math.round(acumulado * 100) / 100;
+      r._classeAbc = acumulado <= 80 ? "A" : (acumulado <= 95 ? "B" : "C");
+    }
+    return { rows, totalValor };
+  }
+
   function renderAbc() {
     const empresaVal = empresaSelAbc.value;
     const classeVal = classeSel.value;
@@ -2643,11 +2703,11 @@ render();
     const classeBadgeResumo = { A: "c-ok", B: "c-warning", C: "c-danger" };
 
     function render() {
-      // sempre considera as 3 classes inteiras (ignora o filtro de Classe selecionado no momento,
-      // que faria a totalizacao ficar incompleta) - so respeita o filtro de Empresa.
-      const empresaVal = empresaSelAbc.value;
-      const { rows: allRows, totalValor } = computeAbc(empresaVal);
-      sub.textContent = empresaVal ? `Empresa: ${empresaVal}` : "Todas as empresas";
+      // Agregado por Produto (soma toda a rede) antes de contar/classificar - senao o mesmo
+      // produto vendido em varias filiais seria contado como varios "produtos" na classe dele
+      // (foi um problema real na 1a versao, que usava computeAbc(empresa) por linha empresa+produto).
+      const { rows: allRows, totalValor } = computeAbcPorProduto();
+      sub.textContent = "Por produto, venda somada em toda a rede (independente de empresa)";
 
       const totalQtd = allRows.reduce((s, r) => s + (r.VendaMes || 0), 0);
       const linhas = ["A", "B", "C"].map(c => {
@@ -2683,6 +2743,52 @@ render();
     modal.addEventListener("click", (e) => { if (e.target === modal) close(); });
     document.addEventListener("keydown", (e) => {
       if (e.key === "Escape" && !modal.classList.contains("is-hidden")) close();
+    });
+  })();
+
+  // ===== Resumo por Produto (soma a venda do mes de todas as empresas por Produto, com Curva
+  // ABC recalculada nesse nivel agregado) - popup, ignora de proposito o filtro de Empresa. =====
+  (function initAbcResumoProdutoModal() {
+    const btn = document.getElementById("abc-resumo-produto-btn");
+    const modal = document.getElementById("abc-resumo-produto-modal");
+    const closeBtn = document.getElementById("abc-resumo-produto-close-btn");
+    const sub = document.getElementById("abc-resumo-produto-sub");
+    const tbody = document.getElementById("abc-resumo-produto-tbody");
+    const classeBadgeProduto = { A: "c-ok", B: "c-warning", C: "c-danger" };
+    let prodSortKey = "VendaMesValor", prodSortDir = -1;
+    let lastRenderedAbcProduto = [];
+
+    function render() {
+      const { rows: allRows, totalValor } = computeAbcPorProduto();
+      const rows = ordenaGenerico(allRows, prodSortKey, prodSortDir);
+      lastRenderedAbcProduto = rows;
+      sub.textContent = `${allRows.length} produtos · venda somada em toda a rede · Total: ${fmtMoney(totalValor)}`;
+      tbody.innerHTML = rows.map(r => `
+        <tr>
+          <td class="produto-name" title="${r.Produto}">${r.Produto}</td>
+          <td class="num-cell">${fmtNum(r._numFiliais)}</td>
+          <td class="num-cell">${fmtMoney(r.VendaMesValor)}</td>
+          <td class="num-cell">${fmtNum(r.VendaMes)}</td>
+          <td class="num-cell">${fmtNum(r._pctDoTotal, 1)}%</td>
+          <td><span class="chip ${classeBadgeProduto[r._classeAbc]}">${r._classeAbc}</span></td>
+        </tr>
+      `).join("");
+    }
+
+    function open() { render(); modal.classList.remove("is-hidden"); closeBtn.focus(); }
+    function close() { modal.classList.add("is-hidden"); btn.focus(); }
+
+    wireSort("#abc-resumo-produto-modal", () => ({ sortKey: prodSortKey, sortDir: prodSortDir }), (k, d) => { prodSortKey = k; prodSortDir = d; }, render);
+    btn.addEventListener("click", open);
+    closeBtn.addEventListener("click", close);
+    modal.addEventListener("click", (e) => { if (e.target === modal) close(); });
+    document.addEventListener("keydown", (e) => {
+      if (e.key === "Escape" && !modal.classList.contains("is-hidden")) close();
+    });
+    document.getElementById("copy-abc-resumo-produto-btn").addEventListener("click", () => {
+      const headers = ["Produto", "Nº de Filiais", "Valor Vendido no Mês", "Qtd Vendida no Mês", "% do Total", "Classe"];
+      const rowsOut = lastRenderedAbcProduto.map(r => [r.Produto, r._numFiliais, r.VendaMesValor, r.VendaMes, r._pctDoTotal, r._classeAbc]);
+      copyToExcel(headers, rowsOut, document.getElementById("copy-abc-resumo-produto-status"));
     });
   })();
 
