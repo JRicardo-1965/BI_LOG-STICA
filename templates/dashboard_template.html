@@ -1360,6 +1360,7 @@
               <option value="C">C</option>
             </select>
           </div>
+          <button class="clear-btn" id="abc-resumo-btn" type="button">📊 Resumo por Classe</button>
           <div class="spacer"></div>
           <span class="result-count" id="result-count-abc"></span>
           <button class="clear-btn" id="clear-filters-abc">Limpar filtros</button>
@@ -1587,6 +1588,30 @@
     </div>
     <div class="modal-close-row">
       <button class="modal-close-btn" id="ranking-close-btn" type="button">Fechar</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-overlay is-hidden" id="abc-resumo-modal">
+  <div class="modal-card modal-card-wide" role="dialog" aria-modal="true" aria-labelledby="abc-resumo-title">
+    <h2 id="abc-resumo-title">Resumo por Classe — Curva ABC</h2>
+    <p class="modal-sub" id="abc-resumo-sub">Totalização dos chips A/B/C da tabela</p>
+    <div class="table-scroll">
+      <table>
+        <thead>
+          <tr>
+            <th>Classe</th>
+            <th class="num-cell">Produtos</th>
+            <th class="num-cell">Valor Vendido<br>no Mês</th>
+            <th class="num-cell">Qtd Vendida<br>no Mês</th>
+            <th class="num-cell">% do<br>Valor Total</th>
+          </tr>
+        </thead>
+        <tbody id="abc-resumo-tbody"></tbody>
+      </table>
+    </div>
+    <div class="modal-close-row">
+      <button class="modal-close-btn" id="abc-resumo-close-btn" type="button">Fechar</button>
     </div>
   </div>
 </div>
@@ -2607,6 +2632,59 @@ render();
     const rowsOut = lastRenderedAbc.map(r => [r.Empresa, r.Produto, r.VendaMesValor, r._mediaDiariaMes, r.VendaMes, r._qtdMediaDiariaMes, r._pctDoTotal, r._pctAcumulado, r._classeAbc]);
     copyToExcel(headers, rowsOut, document.getElementById("copy-abc-status"));
   });
+
+  // ===== Resumo por Classe (totalizacao dos chips A/B/C) - popup ao lado do filtro Classe =====
+  (function initAbcResumoModal() {
+    const btn = document.getElementById("abc-resumo-btn");
+    const modal = document.getElementById("abc-resumo-modal");
+    const closeBtn = document.getElementById("abc-resumo-close-btn");
+    const sub = document.getElementById("abc-resumo-sub");
+    const tbody = document.getElementById("abc-resumo-tbody");
+    const classeBadgeResumo = { A: "c-ok", B: "c-warning", C: "c-danger" };
+
+    function render() {
+      // sempre considera as 3 classes inteiras (ignora o filtro de Classe selecionado no momento,
+      // que faria a totalizacao ficar incompleta) - so respeita o filtro de Empresa.
+      const empresaVal = empresaSelAbc.value;
+      const { rows: allRows, totalValor } = computeAbc(empresaVal);
+      sub.textContent = empresaVal ? `Empresa: ${empresaVal}` : "Todas as empresas";
+
+      const totalQtd = allRows.reduce((s, r) => s + (r.VendaMes || 0), 0);
+      const linhas = ["A", "B", "C"].map(c => {
+        const rowsC = allRows.filter(r => r._classeAbc === c);
+        const valor = rowsC.reduce((s, r) => s + (r.VendaMesValor || 0), 0);
+        const qtd = rowsC.reduce((s, r) => s + (r.VendaMes || 0), 0);
+        const pct = totalValor > 0 ? (valor / totalValor) * 100 : 0;
+        return `
+          <tr>
+            <td><span class="chip ${classeBadgeResumo[c]}">${c}</span></td>
+            <td class="num-cell">${fmtNum(rowsC.length)}</td>
+            <td class="num-cell">${fmtMoney(valor)}</td>
+            <td class="num-cell">${fmtNum(qtd)}</td>
+            <td class="num-cell">${fmtNum(pct, 1)}%</td>
+          </tr>`;
+      }).join("");
+      const linhaTotal = `
+        <tr style="font-weight:600;">
+          <td>Total</td>
+          <td class="num-cell">${fmtNum(allRows.length)}</td>
+          <td class="num-cell">${fmtMoney(totalValor)}</td>
+          <td class="num-cell">${fmtNum(totalQtd)}</td>
+          <td class="num-cell">100,0%</td>
+        </tr>`;
+      tbody.innerHTML = linhas + linhaTotal;
+    }
+
+    function open() { render(); modal.classList.remove("is-hidden"); closeBtn.focus(); }
+    function close() { modal.classList.add("is-hidden"); btn.focus(); }
+
+    btn.addEventListener("click", open);
+    closeBtn.addEventListener("click", close);
+    modal.addEventListener("click", (e) => { if (e.target === modal) close(); });
+    document.addEventListener("keydown", (e) => {
+      if (e.key === "Escape" && !modal.classList.contains("is-hidden")) close();
+    });
+  })();
 
   // ================= EXCESSO DE ESTOQUE (inverso do ponto de ressuprimento) =================
   let excSortKey = "_excesso", excSortDir = -1;
