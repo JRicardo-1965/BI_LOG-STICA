@@ -147,6 +147,33 @@ function usuarioAtivo(email) {
   return latestData.usuarios.find((u) => String(u.email).toLowerCase() === alvo && u.ativo) || null;
 }
 
+// --- seletor "Trocar de módulo" (link de volta pro Portal BI) -----------------
+// Cada BI é desacoplado e extrai sua PRÓPRIA cópia de USUARIOS_SIS_BI (mesma tabela que o
+// Portal já lê) só pra montar essa lista - quem decide de verdade quem pode acessar o quê
+// continua sendo o Portal (rota /ir/:sistema de lá, que confere de novo e faz o handoff via
+// SSO). Isso aqui é só pra não mostrar um botão pra um sistema que o usuário não tem acesso.
+const SISTEMA_INFO = {
+  LOGISTICA: { label: 'Logística', cor: '#0f8a7a' },
+  FINANCEIRO: { label: 'Financeiro', cor: '#2f5ea8' },
+  COMERCIAL: { label: 'Comercial', cor: '#7a4fb5' },
+  REABASTECIMENTO: { label: 'Reabastecimento', cor: '#c1651a' },
+  OPERACIONAL: { label: 'Operacional', cor: '#3f6178' }
+};
+// "LOGÍSTICA" vem do Access com acento - remove diacríticos antes de comparar com as chaves
+// ASCII de SISTEMA_INFO acima (mesmo cuidado já usado no Portal, ver normalizaSistema lá).
+function normalizaSistema(s) {
+  return String(s || '').toUpperCase().normalize('NFD').replace(/[̀-ͯ]/g, '');
+}
+function outrosSistemasDoUsuario(email) {
+  if (!latestData) return [];
+  const alvo = String(email).toLowerCase();
+  return (latestData.usuariosSistemas || [])
+    .filter((v) => String(v.email).toLowerCase() === alvo)
+    .map((v) => normalizaSistema(v.sistema))
+    .filter((s) => s !== 'LOGISTICA' && SISTEMA_INFO[s])
+    .map((s) => ({ sistema: s, label: SISTEMA_INFO[s].label, cor: SISTEMA_INFO[s].cor, url: `${PORTAL_URL}/ir/${s.toLowerCase()}` }));
+}
+
 // --- autenticação ------------------------------------------------------------
 
 function requireAuth(req, res, next) {
@@ -265,6 +292,7 @@ app.post('/api/sync', express.json({ limit: '25mb' }), async (req, res) => {
       meta: body.meta || {},
       usuarios,
       usuariosEmpresas: (body.usuariosEmpresas || []).map((v) => ({ email: v.email, empresa: String(v.empresa) })),
+      usuariosSistemas: (body.usuariosSistemas || []).map((v) => ({ email: v.email, sistema: v.sistema })),
       syncedAt: new Date().toISOString()
     };
 
@@ -331,6 +359,7 @@ app.get('/', requireAuth, (req, res) => {
   // esses dois usam latestData.* direto (sem filterByEmpresas/filterTransferencias).
   const estoqueTodasEmpresas = latestData.estoque || [];
   const transferenciasTodasEmpresas = latestData.transferencias || [];
+  const outrosSistemas = outrosSistemasDoUsuario(req.userEmail);
 
   const html = TEMPLATE
     .replaceAll('__VERSION__', 'hospedado')
@@ -354,7 +383,8 @@ app.get('/', requireAuth, (req, res) => {
     .replaceAll('__DH_ENTRADAS__', meta.DataHoraEntradas || 'sem dados')
     .replaceAll('__DH_ESTOQUE__', meta.DataHoraEstoque || 'sem dados')
     .replaceAll('__HOSTED_USER_LABEL__', escapeHtml(req.userNome))
-    .replaceAll('__HOSTED_SESSION__', '1');
+    .replaceAll('__HOSTED_SESSION__', '1')
+    .replaceAll('__OUTROS_SISTEMAS_JSON__', jsonForScript(outrosSistemas));
 
   res.set('Cache-Control', 'no-store');
   res.send(html);
