@@ -1,3 +1,5 @@
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>BI de Ressuprimento — Aqui Tem Mais</title>
 <style>
   :root {
@@ -675,7 +677,9 @@
   .footnote code { font-family: var(--mono); background: var(--surface-2); padding: 1px 5px; border-radius: 4px; }
 
   @media (max-width: 860px) {
-    .kpis { grid-template-columns: repeat(2, 1fr); }
+    /* Faltavam .kpis-4/.kpis-5 aqui (só ".kpis" sozinho estava coberto) - essas variantes ficavam
+       com 4/5 colunas fixas mesmo no celular, cada card espremido/estourando a largura. */
+    .kpis, .kpis-4, .kpis-5 { grid-template-columns: repeat(2, 1fr); }
     .header { flex-direction: column; align-items: flex-start; }
     .header-right { flex-direction: column-reverse; align-items: flex-start; }
   }
