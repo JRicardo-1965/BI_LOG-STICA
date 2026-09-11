@@ -635,6 +635,43 @@
     line-height: 1.3;
   }
 
+  /* Tabela da aba "Estoque & Ressuprimento" (14 colunas, pedido do usuário 2026-09-11): cabeçalhos
+     quebram em 2 linhas e ficam centralizados quando preciso, dados também centralizados (exceto
+     Empresa/Produto, que continuam à esquerda) - tudo pra caber na largura da tela sem rolar. */
+  .table-compact-estoque { min-width: 0; width: 100%; table-layout: fixed; font-size: 10.5px; }
+  .table-compact-estoque thead th {
+    white-space: normal;
+    line-height: 1.25;
+    padding: 5px 3px;
+    font-size: 8.5px;
+    text-align: center;
+    vertical-align: bottom;
+  }
+  .table-compact-estoque thead th:nth-child(1),
+  .table-compact-estoque thead th:nth-child(2) { text-align: left; }
+  .table-compact-estoque thead th button { justify-content: center; text-align: center; white-space: normal; line-height: 1.25; }
+  .table-compact-estoque tbody td { padding: 4px 3px; font-size: 10.5px; text-align: center; }
+  .table-compact-estoque .num-cell { text-align: center; }
+  .table-compact-estoque td:nth-child(1),
+  .table-compact-estoque td:nth-child(2) { text-align: left; }
+  .table-compact-estoque .gauge-cell { width: auto; padding: 4px 6px; }
+  .table-compact-estoque .chip { font-size: 8.5px; padding: 1px 5px; white-space: normal; text-align: center; }
+  .table-compact-estoque .chip::before { width: 4px; height: 4px; }
+  .table-compact-estoque thead th:nth-child(1)  { width: 7%; }
+  .table-compact-estoque thead th:nth-child(2)  { width: 15%; }
+  .table-compact-estoque thead th:nth-child(3)  { width: 6%; }
+  .table-compact-estoque thead th:nth-child(4)  { width: 6%; }
+  .table-compact-estoque thead th:nth-child(5)  { width: 7%; }
+  .table-compact-estoque thead th:nth-child(6)  { width: 6%; }
+  .table-compact-estoque thead th:nth-child(7)  { width: 6%; }
+  .table-compact-estoque thead th:nth-child(8)  { width: 9%; }
+  .table-compact-estoque thead th:nth-child(9)  { width: 6%; }
+  .table-compact-estoque thead th:nth-child(10) { width: 7%; }
+  .table-compact-estoque thead th:nth-child(11) { width: 6%; }
+  .table-compact-estoque thead th:nth-child(12) { width: 6%; }
+  .table-compact-estoque thead th:nth-child(13) { width: 7%; }
+  .table-compact-estoque thead th:nth-child(14) { width: 6%; }
+
   .chip {
     display: inline-flex;
     align-items: center;
@@ -1219,21 +1256,22 @@
       </div>
 
       <div class="table-scroll">
-        <table>
+        <table class="table-compact-estoque">
           <thead>
             <tr>
               <th data-key="Empresa"><button>Empresa <span class="sort-arrow"></span></button></th>
               <th data-key="Produto"><button>Produto <span class="sort-arrow"></span></button></th>
-              <th data-key="VendaDia"><button>Venda dia <span class="sort-arrow"></span></button></th>
-              <th data-key="VendaMes"><button>Venda mês <span class="sort-arrow"></span></button></th>
-              <th data-key="ConsumoMedioDiario"><button>Cons.méd/dia <span class="sort-arrow"></span></button></th>
-              <th data-key="EstoqueAtual"><button>Estoque <span class="sort-arrow"></span></button></th>
-              <th>Nível (mín → máx)</th>
-              <th data-key="EstoqueSeguranca_Minimo"><button>Mínimo <span class="sort-arrow"></span></button></th>
-              <th data-key="PontoRessuprimento"><button>Ponto ressup. <span class="sort-arrow"></span></button></th>
-              <th data-key="EstoqueMaximo"><button>Máximo <span class="sort-arrow"></span></button></th>
-              <th data-key="_diasParaPedido"><button>Pedir em <span class="sort-arrow"></span></button></th>
-              <th data-key="_dataPedido"><button>Dt prev.pedido <span class="sort-arrow"></span></button></th>
+              <th data-key="VendaDia"><button>Venda<br>Dia <span class="sort-arrow"></span></button></th>
+              <th data-key="VendaMes"><button>Venda<br>Mês <span class="sort-arrow"></span></button></th>
+              <th data-key="ConsumoMedioDiario"><button>Consumo<br>Médio/Dia <span class="sort-arrow"></span></button></th>
+              <th data-key="EstoqueAtual"><button>Estoque<br>Atual <span class="sort-arrow"></span></button></th>
+              <th data-key="_diasEstoque"><button>Dias<br>Estimados <span class="sort-arrow"></span></button></th>
+              <th>Nível<br>(mín → máx)</th>
+              <th data-key="EstoqueSeguranca_Minimo"><button>Estoque<br>Mínimo <span class="sort-arrow"></span></button></th>
+              <th data-key="PontoRessuprimento"><button>Ponto<br>Ressup. <span class="sort-arrow"></span></button></th>
+              <th data-key="EstoqueMaximo"><button>Estoque<br>Máximo <span class="sort-arrow"></span></button></th>
+              <th data-key="_diasParaPedido"><button>Pedir<br>Em <span class="sort-arrow"></span></button></th>
+              <th data-key="_dataPedido"><button>Data Prev.<br>Pedido <span class="sort-arrow"></span></button></th>
               <th data-key="_statusRank"><button>Situação <span class="sort-arrow"></span></button></th>
             </tr>
           </thead>
@@ -1247,6 +1285,7 @@
         Estoque de Segurança = Consumo médio diário × dias de cobertura (ajustável acima, padrão 10) &middot;
         Tempo de Reposição (lead time) = dias ajustável acima, padrão 12 &middot;
         Estoque máximo = Ponto de pedido + lote médio de compra (<code>ENTRADAS_TRANSF_ENTRADAS</code>, últimos 4 meses) &middot;
+        Dias Estimados = Estoque Atual ÷ Consumo Médio Diário (quantos dias o estoque de hoje ainda cobre, até zerar — diferente de "Pedir em", que é até bater o ponto de ressuprimento) &middot;
         Data prevista do pedido = hoje + (Estoque atual − Ponto de pedido) ÷ Consumo médio diário.
         Linhas "FRETE" (frete/transporte) foram excluídas por não serem produto de estoque.
       </div>
@@ -1746,6 +1785,11 @@ function recomputeDerived(row, params) {
   row.EstoqueMaximo = Math.round(estMaximo * 100) / 100;
 
   const atual = row.EstoqueAtual;
+  // Dias estimados = quantos dias o estoque ATUAL ainda cobre no ritmo do consumo médio diário
+  // (até zerar) - diferente de "Pedir em", que é até bater o PONTO DE RESSUPRIMENTO (pedido do
+  // usuário 2026-09-11, coluna nova logo após "Estoque Atual").
+  row._diasEstoque = (cm > 0 && atual !== null && atual !== undefined) ? Math.round((atual / cm) * 10) / 10 : null;
+
   if (atual === null || atual === undefined) {
     row._diasParaPedido = null;
     row._dataPedido = null;
@@ -1836,6 +1880,14 @@ function fmtDate(iso) {
 function fmtDias(v) {
   if (v === null || v === undefined) return "—";
   if (v <= 0) return `atrasado ${Math.abs(Math.round(v))}d`;
+  return `${Math.round(v)}d`;
+}
+
+// "Dias Estimados" (estoque atual ÷ consumo médio diário) - diferente de fmtDias, aqui 0/negativo
+// significa estoque zerado, não "atrasado" (esse conceito é só do ponto de ressuprimento).
+function fmtDiasEstoque(v) {
+  if (v === null || v === undefined) return "—";
+  if (v <= 0) return "esgotado";
   return `${Math.round(v)}d`;
 }
 
@@ -1994,6 +2046,7 @@ function render() {
       <td class="num-cell">${fmtNum(r.VendaMes, 0)}</td>
       <td class="num-cell">${fmtNum(r.ConsumoMedioDiario, 1)}</td>
       <td class="num-cell">${fmtNum(r.EstoqueAtual)}</td>
+      <td class="num-cell">${fmtDiasEstoque(r._diasEstoque)}</td>
       <td class="gauge-cell">${gaugeHtml(r)}</td>
       <td class="num-cell">${fmtNum(r.EstoqueSeguranca_Minimo)}</td>
       <td class="num-cell">${fmtNum(r.PontoRessuprimento)}</td>
@@ -2042,9 +2095,9 @@ document.getElementById("clear-filters").addEventListener("click", () => {
 });
 
 document.getElementById("copy-estoque-btn").addEventListener("click", () => {
-  const headers = ["Empresa", "Produto", "Venda Dia", "Venda Mês", "Consumo Médio Diário", "Estoque Atual", "Mínimo", "Ponto Ressuprimento", "Máximo", "Pedir em (dias)", "Data Prevista Pedido", "Situação"];
+  const headers = ["Empresa", "Produto", "Venda Dia", "Venda Mês", "Consumo Médio Diário", "Estoque Atual", "Dias Estimados", "Mínimo", "Ponto Ressuprimento", "Máximo", "Pedir em (dias)", "Data Prevista Pedido", "Situação"];
   const rowsOut = lastRenderedRows.map(r => [
-    r.Empresa, r.Produto, r.VendaDia, r.VendaMes, r.ConsumoMedioDiario, r.EstoqueAtual,
+    r.Empresa, r.Produto, r.VendaDia, r.VendaMes, r.ConsumoMedioDiario, r.EstoqueAtual, r._diasEstoque,
     r.EstoqueSeguranca_Minimo, r.PontoRessuprimento, r.EstoqueMaximo,
     r._diasParaPedido, r._dataPedido, STATUS_LABEL[r._statusBucket]
   ]);
