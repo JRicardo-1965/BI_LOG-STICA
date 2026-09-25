@@ -1322,6 +1322,8 @@
     <p class="tab-context-note">
       <b>BI de Estoque &amp; Ponto de Ressuprimento</b> · Período analisado: <b>__PERIODO_TEXTO__</b> · Consumo médio calculado sobre este período · parâmetros de ressuprimento ajustáveis abaixo.
     </p>
+    <button class="mob-filtros-btn" type="button" id="estoque-filtros-btn">🔽 Filtros</button>
+    <div class="mob-filtros-backdrop" id="estoque-filtros-backdrop"></div>
     <div class="kpis" id="kpis">
       <div class="kpi k-danger" id="kpi-danger" tabindex="0" role="button" aria-pressed="false">
         <span class="kpi-icon">🔴</span>
@@ -1360,8 +1362,6 @@
         <div class="lbl">Vendido no mês (unidades)</div>
       </div>
     </div>
-    <button class="mob-filtros-btn" type="button" id="estoque-filtros-btn">🔽 Filtros</button>
-    <div class="mob-filtros-backdrop" id="estoque-filtros-backdrop"></div>
     <div class="panel filtros-sheet" id="estoque-filtros-sheet">
       <div class="mob-filtros-close"><button type="button" id="estoque-filtros-close-btn" aria-label="Fechar filtros">✕</button></div>
       <div class="params">
@@ -1447,6 +1447,8 @@
     </div>
 
     <div id="tab-content-meta" class="is-hidden">
+    <button class="mob-filtros-btn" type="button" id="meta-filtros-btn">🔽 Filtros</button>
+    <div class="mob-filtros-backdrop" id="meta-filtros-backdrop"></div>
     <div class="kpis" id="kpis-meta">
       <div class="kpi k-danger" id="kpi-meta-danger" tabindex="0" role="button" aria-pressed="false">
         <span class="kpi-icon">🔴</span>
@@ -1469,8 +1471,6 @@
         <div class="lbl">SKUs com meta (Empresa × Produto)</div>
       </div>
     </div>
-    <button class="mob-filtros-btn" type="button" id="meta-filtros-btn">🔽 Filtros</button>
-    <div class="mob-filtros-backdrop" id="meta-filtros-backdrop"></div>
     <div class="panel filtros-sheet" id="meta-filtros-sheet">
       <div class="mob-filtros-close"><button type="button" id="meta-filtros-close-btn" aria-label="Fechar filtros">✕</button></div>
       <div class="params">
@@ -1569,14 +1569,14 @@
       </div>
 
       <div id="giro-view-abc">
+        <button class="mob-filtros-btn" type="button" id="abc-filtros-btn">🔽 Filtros</button>
+        <div class="mob-filtros-backdrop" id="abc-filtros-backdrop"></div>
         <div class="kpis kpis-4" id="kpis-abc">
           <div class="kpi kpi-static k-ok"><span class="kpi-icon">🟢</span><div class="num" id="count-abc-a">–</div><div class="lbl">Classe A (giro alto)</div></div>
           <div class="kpi kpi-static k-warning"><span class="kpi-icon">🟡</span><div class="num" id="count-abc-b">–</div><div class="lbl">Classe B</div></div>
           <div class="kpi kpi-static"><span class="kpi-icon">⚪</span><div class="num" id="count-abc-c">–</div><div class="lbl">Classe C (giro baixo)</div></div>
           <div class="kpi kpi-static"><span class="kpi-icon">💰</span><div class="num" id="total-abc-valor">–</div><div class="lbl">Total vendido no mês</div></div>
         </div>
-        <button class="mob-filtros-btn" type="button" id="abc-filtros-btn">🔽 Filtros</button>
-        <div class="mob-filtros-backdrop" id="abc-filtros-backdrop"></div>
         <div class="filters filtros-sheet" id="abc-filtros-sheet">
           <div class="mob-filtros-close"><button type="button" id="abc-filtros-close-btn" aria-label="Fechar filtros">✕</button></div>
           <div class="field">
@@ -1629,14 +1629,14 @@
       </div>
 
       <div id="giro-view-excesso" class="is-hidden">
+        <button class="mob-filtros-btn" type="button" id="excesso-filtros-btn">🔽 Filtros</button>
+        <div class="mob-filtros-backdrop" id="excesso-filtros-backdrop"></div>
         <div class="kpis kpis-4" id="kpis-excesso">
           <div class="kpi kpi-static k-warning"><span class="kpi-icon">⚠️</span><div class="num" id="count-excesso">–</div><div class="lbl">SKUs com excesso de estoque</div></div>
           <div class="kpi kpi-static"><span class="kpi-icon">📦</span><div class="num" id="total-excesso-unidades">–</div><div class="lbl">Unidades em excesso</div></div>
           <div class="kpi kpi-static"><span class="kpi-icon">💰</span><div class="num" id="total-excesso-valor">–</div><div class="lbl">Valor equivalente parado</div></div>
           <div class="kpi kpi-static"><span class="kpi-icon">⏱️</span><div class="num" id="media-excesso-cobertura">–</div><div class="lbl">Cobertura média (dias)</div></div>
         </div>
-        <button class="mob-filtros-btn" type="button" id="excesso-filtros-btn">🔽 Filtros</button>
-        <div class="mob-filtros-backdrop" id="excesso-filtros-backdrop"></div>
         <div class="filters filtros-sheet" id="excesso-filtros-sheet">
           <div class="mob-filtros-close"><button type="button" id="excesso-filtros-close-btn" aria-label="Fechar filtros">✕</button></div>
           <div class="field">
@@ -1677,6 +1677,8 @@
 
     <div id="tab-content-transferencias" class="is-hidden">
     <div class="panel">
+      <button class="mob-filtros-btn" type="button" id="transf-filtros-btn">🔽 Filtros</button>
+      <div class="mob-filtros-backdrop" id="transf-filtros-backdrop"></div>
       <div class="kpis kpis-5" id="kpis-transf">
         <div class="kpi kpi-static"><span class="kpi-icon">💰</span><div class="num" id="total-transf-valor">–</div><div class="lbl">Total transferido (valor)</div></div>
         <div class="kpi kpi-static"><span class="kpi-icon">🔁</span><div class="num" id="total-transf-qtd">–</div><div class="lbl">Transferências realizadas</div></div>
@@ -1685,8 +1687,6 @@
         <div class="kpi kpi-static"><span class="kpi-icon">🛣️</span><div class="num" id="rota-transf-top" style="font-size:13px;">–</div><div class="lbl">Rota mais ativa</div></div>
       </div>
 
-      <button class="mob-filtros-btn" type="button" id="transf-filtros-btn">🔽 Filtros</button>
-      <div class="mob-filtros-backdrop" id="transf-filtros-backdrop"></div>
       <div class="filters filtros-sheet" id="transf-filtros-sheet">
         <div class="mob-filtros-close"><button type="button" id="transf-filtros-close-btn" aria-label="Fechar filtros">✕</button></div>
         <div class="field">
