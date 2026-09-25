@@ -204,8 +204,32 @@
   }
   .kpi:hover { transform: translateY(-1px); border-color: var(--accent); }
   .kpi.is-active { border-color: var(--accent); box-shadow: 0 0 0 1px var(--accent), var(--shadow); }
-  .kpi .num { font-family: var(--mono); font-size: 20px; font-weight: 600; font-variant-numeric: tabular-nums; }
+  .kpi .num { font-family: var(--mono); font-size: 20px; font-weight: 600; font-variant-numeric: tabular-nums; overflow-wrap: normal; }
   .kpi .lbl { font-size: 10.5px; color: var(--text-muted); line-height: 1.25; }
+  /* Ícone do card, só no celular (2026-09-25, mesmo espírito visual do BI Comercial - lá o ícone
+     só aparece dentro do .mob-app dedicado; aqui não duplicamos o card, só adicionamos o ícone e
+     escondemos por padrão pra não mudar o visual compacto do desktop). */
+  .kpi-icon { display: none; }
+  @media (max-width: 680px) {
+    .kpis, .kpis-4, .kpis-5, .kpis-6 { gap: 10px; }
+    .kpi { border-radius: 14px; padding: 14px; gap: 5px; }
+    .kpi-icon {
+      display: flex; align-items: center; justify-content: center; width: 26px; height: 26px;
+      border-radius: 8px; background: var(--accent-soft); font-size: 13px; margin-bottom: 2px;
+    }
+    .kpi.k-danger .kpi-icon { background: var(--danger-soft); }
+    .kpi.k-warning .kpi-icon { background: var(--warning-soft); }
+    .kpi.k-ok .kpi-icon { background: var(--ok-soft); }
+    /* clamp em vez de tamanho fixo - achado testando o BI Comercial: número grande fixo (32px)
+       quebra feio no meio do valor em card estreito (ex. "29.0" / "15"). clamp() encolhe sozinho
+       conforme a largura disponível, sem nunca deixar quebrar no meio de um número. */
+    .kpi .num { font-size: clamp(15px, 5.2vw, 22px); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    /* "Rota mais ativa" não é número, é um texto livre (ex. "MATRIZ → FILIAL X") - obriga a
+       quebrar normalmente em vez de herdar o nowrap/ellipsis genérico do resto dos cards, senão
+       estourava a largura da tela (achado testando 2026-09-25: gerava scroll horizontal na
+       página inteira). */
+    #rota-transf-top { white-space: normal; font-size: 14px !important; overflow: visible; text-overflow: clip; }
+  }
   .kpi.k-danger .num { color: var(--danger); }
   .kpi.k-warning .num { color: var(--warning); }
   .kpi.k-ok .num { color: var(--ok); }
@@ -479,8 +503,22 @@
     align-items: center;
     background: var(--surface-2);
   }
-  .field { display: flex; flex-direction: column; gap: 2px; }
-  .field label { font-size: 10px; text-transform: uppercase; letter-spacing: 0.06em; color: var(--text-faint); font-weight: 700; }
+  /* Campo em "caixinha" (2026-09-25, mesmo padrão visual do BI Comercial - .vg2-filter lá): rótulo
+     pequeno/maiúsculo no topo, valor em negrito embaixo, tudo dentro de uma caixa com fundo/borda
+     própria - troca o visual anterior (label solto em cima de um <select> cru) em TODAS as abas
+     de uma vez só, porque .field é a classe compartilhada usada em .params e .filters de toda
+     aba. Select/input viram "invisíveis" (sem borda/fundo próprio) dentro da caixa - quem dá o
+     contorno agora é o .field, não o controle. */
+  .field {
+    display: flex; flex-direction: column; gap: 2px;
+    background: var(--surface); border: 1px solid var(--border); border-radius: 10px;
+    padding: 6px 12px; min-width: 104px; box-shadow: var(--shadow);
+  }
+  .field label { font-size: 9px; text-transform: uppercase; letter-spacing: 0.06em; color: var(--text-faint); font-weight: 700; }
+  .field select, .field input[type="search"], .field input[type="number"], .field input[type="date"] {
+    border: 0; background: transparent; padding: 0; min-width: 0; width: 100%;
+    font-weight: 600; font-size: 12.5px;
+  }
   select, input[type="search"], input[type="number"] {
     font-family: var(--sans);
     font-size: 12px;
@@ -713,12 +751,116 @@
   }
   .footnote code { font-family: var(--mono); background: var(--surface-2); padding: 1px 5px; border-radius: 4px; }
 
+  /* Botão "⋯" que recolhe o header-right no celular (2026-09-25, mesmo padrão já usado e testado
+     no BI Comercial - antes o cabeçalho preto empilhava logo + version tags + badge + vários
+     botões numa coluna só, virando um bloco enorme antes de qualquer conteúdo útil aparecer).
+     Escondido por padrão (só existe em telas estreitas); .header-right some por padrão nessa
+     largura e só reaparece com a classe .is-open (JS em initHeaderMobileToggle). Seletor por ID
+     de propósito - .icon-btn tem a MESMA especificidade de uma classe só e é declarada depois no
+     CSS, então venceria por ordem de declaração e o botão ficaria sempre visível. */
+  #header-mobile-toggle { display: none; }
   @media (max-width: 860px) {
-    /* Faltavam .kpis-4/.kpis-5 aqui (só ".kpis" sozinho estava coberto) - essas variantes ficavam
-       com 4/5 colunas fixas mesmo no celular, cada card espremido/estourando a largura. */
-    .kpis, .kpis-4, .kpis-5 { grid-template-columns: repeat(2, 1fr); }
-    .header { flex-direction: column; align-items: flex-start; }
-    .header-right { flex-direction: column-reverse; align-items: flex-start; }
+    /* Faltavam .kpis-4/.kpis-5/.kpis-6 aqui (só ".kpis" sozinho estava coberto) - essas variantes
+       ficavam com 4/5/6 colunas fixas mesmo no celular, cada card espremido/estourando a largura. */
+    .kpis, .kpis-4, .kpis-5, .kpis-6 { grid-template-columns: repeat(2, 1fr); }
+    .header { flex-direction: row; align-items: center; flex-wrap: wrap; }
+    #header-mobile-toggle {
+      display: flex; width: 44px; height: 44px; font-size: 20px; flex-shrink: 0;
+      background: rgba(255,255,255,0.08); border-color: rgba(255,255,255,0.18); color: #fff;
+    }
+    .header-right { display: none; width: 100%; flex-direction: column; align-items: stretch; margin-top: 10px; gap: 0; }
+    .header-right.is-open {
+      display: flex;
+      background: rgba(255,255,255,0.04);
+      border: 1px solid rgba(255,255,255,0.1);
+      border-radius: 14px;
+      padding: 6px;
+    }
+    .header-right.is-open .version-tag { display: inline-flex; width: auto; margin: 4px 4px 4px 4px; }
+    .header-right.is-open .update-badge,
+    .header-right.is-open #refresh-page-btn,
+    .header-right.is-open #local-update-btn,
+    .header-right.is-open #hosted-user-badge,
+    .header-right.is-open .modulo-switch-wrap,
+    .header-right.is-open #modulo-switch-btn,
+    .header-right.is-open #hosted-logout-btn,
+    .header-right.is-open #update-details-btn,
+    .header-right.is-open .theme-toggle-wrap {
+      width: 100%; box-sizing: border-box; flex-shrink: 0;
+    }
+    .header-right.is-open .update-badge {
+      justify-content: flex-start; white-space: normal; border-radius: 10px; margin: 6px 0 2px; padding: 11px 12px;
+      border-top: 1px solid rgba(255,255,255,.1);
+    }
+    .header-right.is-open #refresh-page-btn,
+    .header-right.is-open #local-update-btn,
+    .header-right.is-open #hosted-user-badge,
+    .header-right.is-open #modulo-switch-btn,
+    .header-right.is-open #hosted-logout-btn,
+    .header-right.is-open #update-details-btn {
+      min-height: 46px; height: auto; border-radius: 10px; justify-content: flex-start;
+      padding: 0 12px; font-size: 14px; gap: 10px; margin: 1px 0;
+    }
+    .header-right.is-open #refresh-page-btn::after { content: "Atualizar página"; font-family: var(--sans); font-weight: 600; }
+    .header-right.is-open #update-details-btn::after { content: "Atualização por tabela"; font-family: var(--sans); font-weight: 600; }
+    .header-right.is-open .modulo-switch-wrap { position: static; }
+    .header-right.is-open #modulo-switch-btn::after { content: "Trocar de módulo"; font-family: var(--sans); font-weight: 600; }
+    .header-right.is-open .modulo-switch-panel { position: static; width: 100%; margin-top: 2px; box-shadow: none; border-radius: 0; }
+    .header-right.is-open #hosted-user-badge {
+      border-top: 1px solid rgba(255,255,255,.1); margin-top: 6px; padding-top: 12px; opacity: .85; cursor: default;
+    }
+    .header-right.is-open .theme-toggle-wrap {
+      flex-direction: row; align-items: center; justify-content: flex-start; gap: 10px; min-height: 46px; padding: 0 12px 0 2px;
+    }
+    .header-right.is-open .is-hidden { display: none !important; }
+    .header-right.is-open .theme-toggle {
+      width: auto; height: auto; min-height: 0; border-radius: 8px; padding: 8px 10px; gap: 8px; justify-content: flex-start; flex: 1;
+    }
+    .header-right.is-open #theme-toggle::after { content: "Tema claro/escuro"; font-family: var(--sans); font-size: 13px; font-weight: 600; }
+  }
+
+  /* Painel de filtros/parâmetros em bottom-sheet no celular (2026-09-25, mesma técnica do BI
+     Comercial: NÃO duplica os campos, só reposiciona o mesmo .panel via CSS - fica sempre visível
+     inline no desktop, e vira uma folha que desliza de baixo, atrás de um botão "Filtros", só em
+     telas estreitas). Cada aba tem seu próprio .filtros-sheet/.mob-filtros-btn/backdrop com um
+     sufixo (ex. -estoque, -meta) porque cada aba tem seu próprio JS de abrir/fechar. */
+  .mob-filtros-btn { display: none; }
+  .mob-filtros-close { display: none; }
+  .mob-filtros-backdrop { display: none; }
+  @media (max-width: 680px) {
+    .mob-filtros-btn {
+      display: flex; align-items: center; justify-content: center; gap: 8px; width: 100%;
+      background: var(--accent); color: #fff; border: none; border-radius: 12px; padding: 12px 16px;
+      font-family: var(--sans); font-size: 14px; font-weight: 700; cursor: pointer; margin-bottom: 10px;
+    }
+    .mob-filtros-btn .cnt { background: rgba(255,255,255,.25); border-radius: 100px; padding: 1px 8px; font-size: 12px; }
+    .mob-filtros-close { display: flex; justify-content: flex-end; margin-bottom: 4px; }
+    .mob-filtros-close button {
+      background: var(--surface-2); border: none; border-radius: 100px; width: 30px; height: 30px;
+      font-size: 14px; color: var(--text-muted); cursor: pointer;
+    }
+    .mob-filtros-backdrop.is-open {
+      display: block; position: fixed; inset: 0; z-index: 59; background: rgba(20,15,10,.35);
+    }
+    .filtros-sheet {
+      position: fixed; left: 0; right: 0; bottom: 0; z-index: 60; margin: 0;
+      background: var(--surface); border-radius: 18px 18px 0 0; box-shadow: 0 -8px 30px rgba(0,0,0,.25);
+      padding: 16px 16px calc(16px + env(safe-area-inset-bottom));
+      max-height: 75vh; overflow-y: auto;
+      transform: translateY(110%); transition: transform .28s ease;
+    }
+    .filtros-sheet.is-open { transform: translateY(0); }
+    /* cobre os 2 casos: .filtros-sheet como EMBRULHO de .params/.filters (abas Estoque/Meta), e
+       .filtros-sheet aplicada DIRETO num .filters que não tem embrulho próprio (aba Giro, que tem
+       2 sub-views dentro do mesmo .panel) - por isso o seletor de si mesma (.filtros-sheet.filters)
+       além dos descendentes. */
+    .filtros-sheet.params, .filtros-sheet.filters,
+    .filtros-sheet .params, .filtros-sheet .filters {
+      border-bottom: none; background: none; padding: 0 0 12px; flex-direction: column; align-items: stretch;
+    }
+    .filtros-sheet .field { width: 100%; }
+    .filtros-sheet select, .filtros-sheet input[type="search"], .filtros-sheet input[type="number"] { width: 100%; min-width: 0; }
+    .filtros-sheet .spacer { display: none; }
   }
 
   .update-badge {
@@ -1140,7 +1282,8 @@
         <img src="__LOGO_DATA_URI__" alt="Aqui Tem Mais" class="brand-logo" />
         <h1 class="brand-name">Logística</h1>
       </div>
-      <div class="header-right">
+      <button id="header-mobile-toggle" class="icon-btn header-mobile-toggle-btn" type="button" aria-expanded="false" aria-controls="header-right-panel" title="Mais opções">⋯</button>
+      <div class="header-right" id="header-right-panel">
         <span class="version-tag" title="Corresponde à Version exibida no menu de versões do Artifact — sobe a cada publicação, inclusive as automáticas">Version __VERSION__</span>
         <span class="version-tag" title="Número de release: só muda quando uma funcionalidade ou visual novo é lançado">Release __RELEASE__</span>
         <span class="update-badge" id="update-badge" title="Última vez que a rotina de atualização rodou com sucesso">
@@ -1181,22 +1324,27 @@
     </p>
     <div class="kpis" id="kpis">
       <div class="kpi k-danger" id="kpi-danger" tabindex="0" role="button" aria-pressed="false">
+        <span class="kpi-icon">🔴</span>
         <div class="num" id="count-danger">–</div>
         <div class="lbl">Pedir agora (abaixo do ponto de ressuprimento)</div>
       </div>
       <div class="kpi k-warning" id="kpi-warning" tabindex="0" role="button" aria-pressed="false">
+        <span class="kpi-icon">⏳</span>
         <div class="num" id="count-warning">–</div>
         <div class="lbl">Pedido previsto em até <span id="lbl-alerta-dias">14</span> dias</div>
       </div>
       <div class="kpi k-ok" id="kpi-ok" tabindex="0" role="button" aria-pressed="false">
+        <span class="kpi-icon">✅</span>
         <div class="num" id="count-ok">–</div>
         <div class="lbl">Estoque saudável</div>
       </div>
       <div class="kpi" id="kpi-total" tabindex="0" role="button" aria-pressed="false">
+        <span class="kpi-icon">📦</span>
         <div class="num" id="count-total">–</div>
         <div class="lbl">SKUs monitorados (Empresa × Produto)</div>
       </div>
       <div class="kpi kpi-static">
+        <span class="kpi-icon">📈</span>
         <button class="kpi-ranking-btn" id="ranking-btn-hoje" data-periodo="hoje" type="button" aria-haspopup="dialog" title="Ver ranking de vendas por vendedor — hoje">
           <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 20V10"/><path d="M12 20V4"/><path d="M20 20v-6"/></svg>
         </button>
@@ -1204,6 +1352,7 @@
         <div class="lbl">Vendido hoje (unidades)</div>
       </div>
       <div class="kpi kpi-static">
+        <span class="kpi-icon">📊</span>
         <button class="kpi-ranking-btn" id="ranking-btn-mes" data-periodo="mes" type="button" aria-haspopup="dialog" title="Ver ranking de vendas por vendedor — mês">
           <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 20V10"/><path d="M12 20V4"/><path d="M20 20v-6"/></svg>
         </button>
@@ -1211,7 +1360,10 @@
         <div class="lbl">Vendido no mês (unidades)</div>
       </div>
     </div>
-    <div class="panel">
+    <button class="mob-filtros-btn" type="button" id="estoque-filtros-btn">🔽 Filtros</button>
+    <div class="mob-filtros-backdrop" id="estoque-filtros-backdrop"></div>
+    <div class="panel filtros-sheet" id="estoque-filtros-sheet">
+      <div class="mob-filtros-close"><button type="button" id="estoque-filtros-close-btn" aria-label="Fechar filtros">✕</button></div>
       <div class="params">
         <div class="field">
           <label for="p-seguranca">Estoque de segurança (dias)</label>
@@ -1254,7 +1406,9 @@
         <button class="clear-btn copy-btn" id="copy-estoque-btn" type="button">📋 Copiar para Excel</button>
         <span class="copy-status" id="copy-estoque-status"></span>
       </div>
+    </div>
 
+    <div class="panel">
       <div class="table-scroll">
         <table class="table-compact-estoque">
           <thead>
@@ -1295,23 +1449,30 @@
     <div id="tab-content-meta" class="is-hidden">
     <div class="kpis" id="kpis-meta">
       <div class="kpi k-danger" id="kpi-meta-danger" tabindex="0" role="button" aria-pressed="false">
+        <span class="kpi-icon">🔴</span>
         <div class="num" id="count-meta-danger">–</div>
         <div class="lbl">Pedir agora (abaixo do ponto de ressuprimento)</div>
       </div>
       <div class="kpi k-warning" id="kpi-meta-warning" tabindex="0" role="button" aria-pressed="false">
+        <span class="kpi-icon">⏳</span>
         <div class="num" id="count-meta-warning">–</div>
         <div class="lbl">Pedido previsto em até <span id="lbl-meta-alerta-dias">14</span> dias</div>
       </div>
       <div class="kpi k-ok" id="kpi-meta-ok" tabindex="0" role="button" aria-pressed="false">
+        <span class="kpi-icon">✅</span>
         <div class="num" id="count-meta-ok">–</div>
         <div class="lbl">Estoque saudável</div>
       </div>
       <div class="kpi" id="kpi-meta-total" tabindex="0" role="button" aria-pressed="false">
+        <span class="kpi-icon">📦</span>
         <div class="num" id="count-meta-total">–</div>
         <div class="lbl">SKUs com meta (Empresa × Produto)</div>
       </div>
     </div>
-    <div class="panel">
+    <button class="mob-filtros-btn" type="button" id="meta-filtros-btn">🔽 Filtros</button>
+    <div class="mob-filtros-backdrop" id="meta-filtros-backdrop"></div>
+    <div class="panel filtros-sheet" id="meta-filtros-sheet">
+      <div class="mob-filtros-close"><button type="button" id="meta-filtros-close-btn" aria-label="Fechar filtros">✕</button></div>
       <div class="params">
         <div class="field">
           <label for="p-meta-percentual">Meta: Mínimo X% / Máximo +X%</label>
@@ -1354,7 +1515,9 @@
         <button class="clear-btn copy-btn" id="copy-meta-btn" type="button">📋 Copiar para Excel</button>
         <span class="copy-status" id="copy-meta-status"></span>
       </div>
+    </div>
 
+    <div class="panel">
       <div class="table-scroll">
         <table class="table-compact">
           <thead>
@@ -1407,12 +1570,15 @@
 
       <div id="giro-view-abc">
         <div class="kpis kpis-4" id="kpis-abc">
-          <div class="kpi kpi-static k-ok"><div class="num" id="count-abc-a">–</div><div class="lbl">Classe A (giro alto)</div></div>
-          <div class="kpi kpi-static k-warning"><div class="num" id="count-abc-b">–</div><div class="lbl">Classe B</div></div>
-          <div class="kpi kpi-static"><div class="num" id="count-abc-c">–</div><div class="lbl">Classe C (giro baixo)</div></div>
-          <div class="kpi kpi-static"><div class="num" id="total-abc-valor">–</div><div class="lbl">Total vendido no mês</div></div>
+          <div class="kpi kpi-static k-ok"><span class="kpi-icon">🟢</span><div class="num" id="count-abc-a">–</div><div class="lbl">Classe A (giro alto)</div></div>
+          <div class="kpi kpi-static k-warning"><span class="kpi-icon">🟡</span><div class="num" id="count-abc-b">–</div><div class="lbl">Classe B</div></div>
+          <div class="kpi kpi-static"><span class="kpi-icon">⚪</span><div class="num" id="count-abc-c">–</div><div class="lbl">Classe C (giro baixo)</div></div>
+          <div class="kpi kpi-static"><span class="kpi-icon">💰</span><div class="num" id="total-abc-valor">–</div><div class="lbl">Total vendido no mês</div></div>
         </div>
-        <div class="filters">
+        <button class="mob-filtros-btn" type="button" id="abc-filtros-btn">🔽 Filtros</button>
+        <div class="mob-filtros-backdrop" id="abc-filtros-backdrop"></div>
+        <div class="filters filtros-sheet" id="abc-filtros-sheet">
+          <div class="mob-filtros-close"><button type="button" id="abc-filtros-close-btn" aria-label="Fechar filtros">✕</button></div>
           <div class="field">
             <label for="f-abc-empresa">Empresa</label>
             <select id="f-abc-empresa"><option value="">Todas as empresas</option></select>
@@ -1464,12 +1630,15 @@
 
       <div id="giro-view-excesso" class="is-hidden">
         <div class="kpis kpis-4" id="kpis-excesso">
-          <div class="kpi kpi-static k-warning"><div class="num" id="count-excesso">–</div><div class="lbl">SKUs com excesso de estoque</div></div>
-          <div class="kpi kpi-static"><div class="num" id="total-excesso-unidades">–</div><div class="lbl">Unidades em excesso</div></div>
-          <div class="kpi kpi-static"><div class="num" id="total-excesso-valor">–</div><div class="lbl">Valor equivalente parado</div></div>
-          <div class="kpi kpi-static"><div class="num" id="media-excesso-cobertura">–</div><div class="lbl">Cobertura média (dias)</div></div>
+          <div class="kpi kpi-static k-warning"><span class="kpi-icon">⚠️</span><div class="num" id="count-excesso">–</div><div class="lbl">SKUs com excesso de estoque</div></div>
+          <div class="kpi kpi-static"><span class="kpi-icon">📦</span><div class="num" id="total-excesso-unidades">–</div><div class="lbl">Unidades em excesso</div></div>
+          <div class="kpi kpi-static"><span class="kpi-icon">💰</span><div class="num" id="total-excesso-valor">–</div><div class="lbl">Valor equivalente parado</div></div>
+          <div class="kpi kpi-static"><span class="kpi-icon">⏱️</span><div class="num" id="media-excesso-cobertura">–</div><div class="lbl">Cobertura média (dias)</div></div>
         </div>
-        <div class="filters">
+        <button class="mob-filtros-btn" type="button" id="excesso-filtros-btn">🔽 Filtros</button>
+        <div class="mob-filtros-backdrop" id="excesso-filtros-backdrop"></div>
+        <div class="filters filtros-sheet" id="excesso-filtros-sheet">
+          <div class="mob-filtros-close"><button type="button" id="excesso-filtros-close-btn" aria-label="Fechar filtros">✕</button></div>
           <div class="field">
             <label for="f-excesso-empresa">Empresa</label>
             <select id="f-excesso-empresa"><option value="">Todas as empresas</option></select>
@@ -1509,14 +1678,17 @@
     <div id="tab-content-transferencias" class="is-hidden">
     <div class="panel">
       <div class="kpis kpis-5" id="kpis-transf">
-        <div class="kpi kpi-static"><div class="num" id="total-transf-valor">–</div><div class="lbl">Total transferido (valor)</div></div>
-        <div class="kpi kpi-static"><div class="num" id="total-transf-qtd">–</div><div class="lbl">Transferências realizadas</div></div>
-        <div class="kpi kpi-static"><div class="num" id="total-transf-unidades">–</div><div class="lbl">Unidades transferidas</div></div>
-        <div class="kpi kpi-static" id="kpi-transf-pendente" tabindex="0" role="button" aria-pressed="false" title="Clique pra filtrar"><div class="num" id="total-transf-pendente">–</div><div class="lbl">Aguardando aceite</div></div>
-        <div class="kpi kpi-static"><div class="num" id="rota-transf-top" style="font-size:13px;">–</div><div class="lbl">Rota mais ativa</div></div>
+        <div class="kpi kpi-static"><span class="kpi-icon">💰</span><div class="num" id="total-transf-valor">–</div><div class="lbl">Total transferido (valor)</div></div>
+        <div class="kpi kpi-static"><span class="kpi-icon">🔁</span><div class="num" id="total-transf-qtd">–</div><div class="lbl">Transferências realizadas</div></div>
+        <div class="kpi kpi-static"><span class="kpi-icon">📦</span><div class="num" id="total-transf-unidades">–</div><div class="lbl">Unidades transferidas</div></div>
+        <div class="kpi kpi-static" id="kpi-transf-pendente" tabindex="0" role="button" aria-pressed="false" title="Clique pra filtrar"><span class="kpi-icon">⏳</span><div class="num" id="total-transf-pendente">–</div><div class="lbl">Aguardando aceite</div></div>
+        <div class="kpi kpi-static"><span class="kpi-icon">🛣️</span><div class="num" id="rota-transf-top" style="font-size:13px;">–</div><div class="lbl">Rota mais ativa</div></div>
       </div>
 
-      <div class="filters">
+      <button class="mob-filtros-btn" type="button" id="transf-filtros-btn">🔽 Filtros</button>
+      <div class="mob-filtros-backdrop" id="transf-filtros-backdrop"></div>
+      <div class="filters filtros-sheet" id="transf-filtros-sheet">
+        <div class="mob-filtros-close"><button type="button" id="transf-filtros-close-btn" aria-label="Fechar filtros">✕</button></div>
         <div class="field">
           <label for="f-transf-origem">Origem</label>
           <select id="f-transf-origem"><option value="">Todas as filiais</option></select>
@@ -2136,6 +2308,40 @@ document.getElementById("reset-params").addEventListener("click", () => {
 
 applyParams();
 render();
+
+// Abre/fecha o painel de filtros em bottom-sheet no celular - reusado por aba (cada aba chama com
+// os próprios ids, ver initFiltrosMobile("estoque") logo abaixo das outras abas irem ganhando o
+// mesmo tratamento). Mesma técnica do BI Comercial (abrirFiltrosVG/fecharFiltrosVG etc.).
+function initFiltrosMobile(prefixo) {
+  const btn = document.getElementById(`${prefixo}-filtros-btn`);
+  const closeBtn = document.getElementById(`${prefixo}-filtros-close-btn`);
+  const sheet = document.getElementById(`${prefixo}-filtros-sheet`);
+  const backdrop = document.getElementById(`${prefixo}-filtros-backdrop`);
+  if (!btn || !sheet || !backdrop) return;
+  function abrir() { sheet.classList.add("is-open"); backdrop.classList.add("is-open"); document.body.style.overflow = "hidden"; }
+  function fechar() { sheet.classList.remove("is-open"); backdrop.classList.remove("is-open"); document.body.style.overflow = ""; }
+  btn.addEventListener("click", abrir);
+  if (closeBtn) closeBtn.addEventListener("click", fechar);
+  backdrop.addEventListener("click", fechar);
+}
+initFiltrosMobile("estoque");
+initFiltrosMobile("meta");
+initFiltrosMobile("abc");
+initFiltrosMobile("excesso");
+initFiltrosMobile("transf");
+
+// Botão "⋯" que recolhe/expande o header-right no celular - mesmo padrão do BI Comercial.
+(function initHeaderMobileToggle() {
+  const btn = document.getElementById("header-mobile-toggle");
+  const panel = document.getElementById("header-right-panel");
+  if (!btn || !panel) return;
+  btn.addEventListener("click", () => {
+    const abrindo = !panel.classList.contains("is-open");
+    panel.classList.toggle("is-open", abrindo);
+    btn.setAttribute("aria-expanded", String(abrindo));
+    btn.textContent = abrindo ? "✕" : "⋯";
+  });
+})();
 
 (function initThemeToggle() {
   const root = document.documentElement;
