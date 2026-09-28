@@ -710,6 +710,25 @@
   .table-compact-estoque thead th:nth-child(13) { width: 7%; }
   .table-compact-estoque thead th:nth-child(14) { width: 6%; }
 
+  /* Variante "Estoque & Ressuprimento Agrupados" (13 colunas, sem Empresa - 2026-09-28): reaproveita
+     .table-compact-estoque mas sobrescreve alinhamento/larguras porque a contagem de colunas mudou
+     (só Produto fica a esquerda, nao Produto+Empresa). */
+  .table-compact-estoque-agrupado.table-compact-estoque thead th:nth-child(2) { text-align: center; }
+  .table-compact-estoque-agrupado.table-compact-estoque td:nth-child(2) { text-align: center; }
+  .table-compact-estoque-agrupado.table-compact-estoque thead th:nth-child(1)  { width: 16%; }
+  .table-compact-estoque-agrupado.table-compact-estoque thead th:nth-child(2)  { width: 6%; }
+  .table-compact-estoque-agrupado.table-compact-estoque thead th:nth-child(3)  { width: 6%; }
+  .table-compact-estoque-agrupado.table-compact-estoque thead th:nth-child(4)  { width: 7%; }
+  .table-compact-estoque-agrupado.table-compact-estoque thead th:nth-child(5)  { width: 7%; }
+  .table-compact-estoque-agrupado.table-compact-estoque thead th:nth-child(6)  { width: 7%; }
+  .table-compact-estoque-agrupado.table-compact-estoque thead th:nth-child(7)  { width: 10%; }
+  .table-compact-estoque-agrupado.table-compact-estoque thead th:nth-child(8)  { width: 7%; }
+  .table-compact-estoque-agrupado.table-compact-estoque thead th:nth-child(9)  { width: 7%; }
+  .table-compact-estoque-agrupado.table-compact-estoque thead th:nth-child(10) { width: 7%; }
+  .table-compact-estoque-agrupado.table-compact-estoque thead th:nth-child(11) { width: 6%; }
+  .table-compact-estoque-agrupado.table-compact-estoque thead th:nth-child(12) { width: 7%; }
+  .table-compact-estoque-agrupado.table-compact-estoque thead th:nth-child(13) { width: 7%; }
+
   .chip {
     display: inline-flex;
     align-items: center;
@@ -1312,6 +1331,7 @@
 
     <div class="tab-nav">
       <button class="tab-btn is-active" id="tab-btn-estoque" type="button" data-tab="estoque">Estoque &amp; Ressuprimento</button>
+      <button class="tab-btn" id="tab-btn-consolidado" type="button" data-tab="consolidado">Estoque &amp; Ressuprimento Agrupados</button>
       <button class="tab-btn" id="tab-btn-giro" type="button" data-tab="giro">Giro &amp; Estoque</button>
       <button class="tab-btn" id="tab-btn-transferencias" type="button" data-tab="transferencias">Transferências</button>
       <button class="tab-btn" id="tab-btn-estoquefilial" type="button" data-tab="estoquefilial">Estoque por Filial</button>
@@ -1445,6 +1465,92 @@
         Dias Estimados = Estoque Atual ÷ Consumo Médio Diário (quantos dias o estoque de hoje ainda cobre, até zerar — diferente de "Pedir em", que é até bater o ponto de ressuprimento) &middot;
         Data prevista do pedido = hoje + (Estoque atual − Ponto de pedido) ÷ Consumo médio diário.
         Linhas "FRETE" (frete/transporte) foram excluídas por não serem produto de estoque.
+      </div>
+    </div>
+    </div>
+
+    <div id="tab-content-consolidado" class="is-hidden">
+    <p class="tab-context-note">
+      <b>Estoque &amp; Ressuprimento Agrupados</b> · todos os produtos de todas as filiais agrupados em uma única linha por produto · Período analisado: <b>__PERIODO_TEXTO__</b> · usa os mesmos parâmetros de ressuprimento configurados na aba "Estoque &amp; Ressuprimento".
+    </p>
+    <button class="mob-filtros-btn" type="button" id="consolidado-filtros-btn">🔽 Filtros</button>
+    <div class="mob-filtros-backdrop" id="consolidado-filtros-backdrop"></div>
+    <div class="panel filtros-sheet" id="consolidado-filtros-sheet">
+      <div class="mob-filtros-close"><button type="button" id="consolidado-filtros-close-btn" aria-label="Fechar filtros">✕</button></div>
+      <div class="filters">
+        <div class="field">
+          <label for="f-produto-consolidado">Produto</label>
+          <select id="f-produto-consolidado"><option value="">Todos os produtos</option></select>
+        </div>
+        <div class="field">
+          <label for="f-status-consolidado">Situação</label>
+          <select id="f-status-consolidado">
+            <option value="">Todas as situações</option>
+            <option value="danger">Pedir agora</option>
+            <option value="warning">Até 14 dias</option>
+            <option value="ok">Saudável</option>
+            <option value="neutral">Sem estoque atual</option>
+          </select>
+        </div>
+        <div class="spacer"></div>
+        <span class="result-count" id="result-count-consolidado"></span>
+        <button class="clear-btn" id="clear-filters-consolidado">Limpar filtros</button>
+        <button class="clear-btn copy-btn" id="copy-consolidado-btn" type="button">📋 Copiar para Excel</button>
+        <span class="copy-status" id="copy-consolidado-status"></span>
+      </div>
+    </div>
+    <div class="kpis" id="kpis-consolidado">
+      <div class="kpi k-danger" id="kpi-consolidado-danger" tabindex="0" role="button" aria-pressed="false">
+        <span class="kpi-icon">🔴</span>
+        <div class="num" id="count-consolidado-danger">–</div>
+        <div class="lbl">Pedir agora (abaixo do ponto de ressuprimento)</div>
+      </div>
+      <div class="kpi k-warning" id="kpi-consolidado-warning" tabindex="0" role="button" aria-pressed="false">
+        <span class="kpi-icon">⏳</span>
+        <div class="num" id="count-consolidado-warning">–</div>
+        <div class="lbl">Pedido previsto em até <span id="lbl-consolidado-alerta-dias">14</span> dias</div>
+      </div>
+      <div class="kpi k-ok" id="kpi-consolidado-ok" tabindex="0" role="button" aria-pressed="false">
+        <span class="kpi-icon">✅</span>
+        <div class="num" id="count-consolidado-ok">–</div>
+        <div class="lbl">Estoque saudável</div>
+      </div>
+      <div class="kpi" id="kpi-consolidado-total" tabindex="0" role="button" aria-pressed="false">
+        <span class="kpi-icon">📦</span>
+        <div class="num" id="count-consolidado-total">–</div>
+        <div class="lbl">Produtos monitorados (todas as filiais)</div>
+      </div>
+    </div>
+
+    <div class="panel">
+      <div class="table-scroll">
+        <table class="table-compact-estoque table-compact-estoque-agrupado">
+          <thead>
+            <tr>
+              <th data-key="Produto"><button>Produto <span class="sort-arrow"></span></button></th>
+              <th data-key="VendaDia"><button>Venda<br>Dia <span class="sort-arrow"></span></button></th>
+              <th data-key="VendaMes"><button>Venda<br>Mês <span class="sort-arrow"></span></button></th>
+              <th data-key="ConsumoMedioDiario"><button>Consumo<br>Médio/Dia <span class="sort-arrow"></span></button></th>
+              <th data-key="EstoqueAtual"><button>Estoque<br>Atual <span class="sort-arrow"></span></button></th>
+              <th data-key="_diasEstoque"><button>Dias<br>Estimados <span class="sort-arrow"></span></button></th>
+              <th>Nível<br>(mín → máx)</th>
+              <th data-key="EstoqueSeguranca_Minimo"><button>Estoque<br>Mínimo <span class="sort-arrow"></span></button></th>
+              <th data-key="PontoRessuprimento"><button>Ponto<br>Ressup. <span class="sort-arrow"></span></button></th>
+              <th data-key="EstoqueMaximo"><button>Estoque<br>Máximo <span class="sort-arrow"></span></button></th>
+              <th data-key="_diasParaPedido"><button>Pedir<br>Em <span class="sort-arrow"></span></button></th>
+              <th data-key="_dataPedido"><button>Data Prev.<br>Pedido <span class="sort-arrow"></span></button></th>
+              <th data-key="_statusRank"><button>Situação <span class="sort-arrow"></span></button></th>
+            </tr>
+          </thead>
+          <tbody id="tbody-consolidado"></tbody>
+        </table>
+      </div>
+      <div class="empty-state" id="empty-state-consolidado" style="display:none;">Nenhum item corresponde aos filtros aplicados.</div>
+
+      <div class="footnote">
+        Cada linha soma os valores de todas as filiais para o mesmo produto (Venda Dia, Venda Mês, Consumo Médio, Estoque Atual, Lote Médio de Compra) e recalcula Mínimo/Ponto de Ressuprimento/Máximo sobre esses totais, com os mesmos parâmetros da aba "Estoque &amp; Ressuprimento" &middot;
+        Dias Estimados = Estoque Atual (total) ÷ Consumo Médio Diário (total) &middot;
+        Linhas "FRETE" foram excluídas por não serem produto de estoque.
       </div>
     </div>
     </div>
@@ -2178,6 +2284,7 @@ document.getElementById("kpi-total").addEventListener("click", () => { statusSel
 function onParamChange() {
   applyParams();
   render();
+  if (window.renderConsolidado) window.renderConsolidado();
 }
 pSeguranca.addEventListener("input", onParamChange);
 pLeadtime.addEventListener("input", onParamChange);
@@ -2192,6 +2299,149 @@ document.getElementById("reset-params").addEventListener("click", () => {
 
 applyParams();
 render();
+
+// Aba "Ressuprimento Agrupado" (2026-09-28): mesmas linhas de `data` (Empresa x Produto), mas
+// somadas por Produto (todas as filiais juntas) e recalculadas com a mesma formula/params da aba
+// "Estoque & Ressuprimento" (recomputeDerived), pra dar uma visao unica por produto no lugar de
+// uma linha por Empresa x Produto.
+(function initConsolidadoTab() {
+  const produtoSel = document.getElementById("f-produto-consolidado");
+  const statusSel = document.getElementById("f-status-consolidado");
+  let sortKey = "_statusRank";
+  let sortDir = 1;
+  let lastRenderedRows = [];
+  let produtosPopulados = false;
+
+  function buildAggregatedRows() {
+    const map = new Map();
+    for (const r of data) {
+      const key = r.CodProd;
+      let agg = map.get(key);
+      if (!agg) {
+        agg = { CodProd: r.CodProd, Produto: r.Produto, VendaDia: 0, VendaMes: 0, ConsumoMedioDiario: 0, EstoqueAtual: 0, LoteMedioCompra: 0 };
+        map.set(key, agg);
+      }
+      agg.VendaDia += (r.VendaDia || 0);
+      agg.VendaMes += (r.VendaMes || 0);
+      agg.ConsumoMedioDiario += (r.ConsumoMedioDiario || 0);
+      agg.EstoqueAtual += (r.EstoqueAtual || 0);
+      agg.LoteMedioCompra += (r.LoteMedioCompra || 0);
+    }
+    const rows = [...map.values()];
+    const params = currentParams();
+    for (const row of rows) recomputeDerived(row, params);
+    return rows;
+  }
+
+  function populateProdutos(rows) {
+    if (produtosPopulados) return;
+    const prevSelected = produtoSel.value;
+    const produtos = [...new Set(rows.map(r => r.Produto))].sort();
+    produtoSel.innerHTML = '<option value="">Todos os produtos</option>' +
+      produtos.map(p => `<option value="${p}">${p}</option>`).join("");
+    produtoSel.value = produtos.includes(prevSelected) ? prevSelected : "";
+    produtosPopulados = true;
+  }
+
+  function render() {
+    const allRows = buildAggregatedRows();
+    populateProdutos(allRows);
+    document.getElementById("lbl-consolidado-alerta-dias").textContent = currentParams().alertaDias;
+
+    const produtoVal = produtoSel.value;
+    const statusVal = statusSel.value;
+    const scopedRows = allRows.filter(r => !produtoVal || r.Produto === produtoVal);
+    let rows = scopedRows.filter(r => !statusVal || r._statusBucket === statusVal);
+
+    rows.sort((a, b) => {
+      let av = a[sortKey], bv = b[sortKey];
+      if (av === null || av === undefined) av = sortDir === 1 ? Infinity : -Infinity;
+      if (bv === null || bv === undefined) bv = sortDir === 1 ? Infinity : -Infinity;
+      if (typeof av === "string") return av.localeCompare(bv) * sortDir;
+      return (av - bv) * sortDir;
+    });
+
+    const tbody = document.getElementById("tbody-consolidado");
+    tbody.innerHTML = "";
+    document.getElementById("empty-state-consolidado").style.display = rows.length ? "none" : "block";
+    document.getElementById("result-count-consolidado").textContent = `${rows.length} de ${scopedRows.length} itens`;
+
+    for (const r of rows) {
+      const tr = document.createElement("tr");
+      tr.className = r._statusBucket === "danger" ? "row-danger" : (r._statusBucket === "warning" ? "row-warning" : "");
+      tr.innerHTML = `
+        <td class="produto-name">${r.Produto}</td>
+        <td class="num-cell">${fmtNum(r.VendaDia, 0)}</td>
+        <td class="num-cell">${fmtNum(r.VendaMes, 0)}</td>
+        <td class="num-cell">${fmtNum(r.ConsumoMedioDiario, 1)}</td>
+        <td class="num-cell">${fmtNum(r.EstoqueAtual)}</td>
+        <td class="num-cell">${fmtDiasEstoque(r._diasEstoque)}</td>
+        <td class="gauge-cell">${gaugeHtml(r)}</td>
+        <td class="num-cell">${fmtNum(r.EstoqueSeguranca_Minimo)}</td>
+        <td class="num-cell">${fmtNum(r.PontoRessuprimento)}</td>
+        <td class="num-cell">${fmtNum(r.EstoqueMaximo)}</td>
+        <td class="num-cell">${fmtDias(r._diasParaPedido)}</td>
+        <td class="num-cell">${fmtDate(r._dataPedido)}</td>
+        <td><span class="chip c-${r._statusBucket}">${STATUS_LABEL[r._statusBucket]}</span></td>
+      `;
+      tbody.appendChild(tr);
+    }
+
+    document.getElementById("count-consolidado-danger").textContent = scopedRows.filter(r => r._statusBucket === "danger").length;
+    document.getElementById("count-consolidado-warning").textContent = scopedRows.filter(r => r._statusBucket === "warning").length;
+    document.getElementById("count-consolidado-ok").textContent = scopedRows.filter(r => r._statusBucket === "ok").length;
+    document.getElementById("count-consolidado-total").textContent = scopedRows.length;
+
+    document.querySelectorAll('#tab-content-consolidado th[data-key] .sort-arrow').forEach(el => el.textContent = "");
+    const activeTh = document.querySelector(`#tab-content-consolidado th[data-key="${sortKey}"] .sort-arrow`);
+    if (activeTh) activeTh.textContent = sortDir === 1 ? "▲" : "▼";
+
+    lastRenderedRows = rows;
+  }
+
+  document.querySelectorAll('#tab-content-consolidado th[data-key] button').forEach(btn => {
+    btn.addEventListener("click", () => {
+      const key = btn.parentElement.dataset.key;
+      if (sortKey === key) sortDir *= -1; else { sortKey = key; sortDir = 1; }
+      render();
+    });
+  });
+
+  function setActiveKpi(which) {
+    document.querySelectorAll('#kpis-consolidado .kpi').forEach(k => k.classList.remove("is-active"));
+    if (which) document.getElementById(`kpi-consolidado-${which}`).classList.add("is-active");
+  }
+
+  produtoSel.addEventListener("change", render);
+  statusSel.addEventListener("change", render);
+
+  document.getElementById("clear-filters-consolidado").addEventListener("click", () => {
+    produtoSel.value = ""; statusSel.value = "";
+    setActiveKpi(null);
+    render();
+  });
+
+  document.getElementById("kpi-consolidado-danger").addEventListener("click", () => { statusSel.value = "danger"; setActiveKpi("danger"); render(); });
+  document.getElementById("kpi-consolidado-warning").addEventListener("click", () => { statusSel.value = "warning"; setActiveKpi("warning"); render(); });
+  document.getElementById("kpi-consolidado-ok").addEventListener("click", () => { statusSel.value = ""; setActiveKpi("ok"); render(); });
+  document.getElementById("kpi-consolidado-total").addEventListener("click", () => { statusSel.value = ""; setActiveKpi("total"); render(); });
+
+  [document.getElementById("kpi-consolidado-danger"), document.getElementById("kpi-consolidado-warning"), document.getElementById("kpi-consolidado-ok"), document.getElementById("kpi-consolidado-total")].forEach(el => {
+    el.addEventListener("keydown", e => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); el.click(); } });
+  });
+
+  document.getElementById("copy-consolidado-btn").addEventListener("click", () => {
+    const headers = ["Produto", "Venda Dia", "Venda Mês", "Consumo Médio Diário", "Estoque Atual", "Dias Estimados", "Mínimo", "Ponto Ressuprimento", "Máximo", "Pedir em (dias)", "Data Prevista Pedido", "Situação"];
+    const rowsOut = lastRenderedRows.map(r => [
+      r.Produto, r.VendaDia, r.VendaMes, r.ConsumoMedioDiario, r.EstoqueAtual, r._diasEstoque,
+      r.EstoqueSeguranca_Minimo, r.PontoRessuprimento, r.EstoqueMaximo,
+      r._diasParaPedido, r._dataPedido, STATUS_LABEL[r._statusBucket]
+    ]);
+    copyToExcel(headers, rowsOut, document.getElementById("copy-consolidado-status"));
+  });
+
+  window.renderConsolidado = render;
+})();
 
 // Abre/fecha o painel de filtros em bottom-sheet no celular - reusado por aba (cada aba chama com
 // os próprios ids, ver initFiltrosMobile("estoque") logo abaixo das outras abas irem ganhando o
@@ -2209,6 +2459,7 @@ function initFiltrosMobile(prefixo) {
   backdrop.addEventListener("click", fechar);
 }
 initFiltrosMobile("estoque");
+initFiltrosMobile("consolidado");
 initFiltrosMobile("abc");
 initFiltrosMobile("excesso");
 initFiltrosMobile("transf");
@@ -2437,7 +2688,7 @@ initFiltrosMobile("transf");
 })();
 
 (function initTabs() {
-  const tabs = ["estoque", "giro", "transferencias", "estoquefilial"];
+  const tabs = ["estoque", "consolidado", "giro", "transferencias", "estoquefilial"];
   const btns = {};
   const contents = {};
   for (const t of tabs) {
@@ -2451,6 +2702,7 @@ initFiltrosMobile("transf");
       btns[t].classList.toggle("is-active", isActive);
       contents[t].classList.toggle("is-hidden", !isActive);
     }
+    if (tab === "consolidado" && window.renderConsolidado) window.renderConsolidado();
     if (tab === "giro" && window.renderGiro) window.renderGiro();
     if (tab === "transferencias" && window.renderTransferencias) window.renderTransferencias();
     if (tab === "estoquefilial" && window.renderEstoqueFilial) window.renderEstoqueFilial();
