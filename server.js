@@ -292,9 +292,6 @@ app.post('/api/sync', express.json({ limit: '25mb' }), async (req, res) => {
       estoque: body.estoque || [],
       ranking: body.ranking || [],
       clientes: body.clientes || [],
-      metas: body.metas || [],
-      metaSegmento: body.metaSegmento || [],
-      metaProduto: body.metaProduto || [],
       transferencias: body.transferencias || [],
       meta: body.meta || {},
       usuarios,
@@ -353,16 +350,13 @@ app.get('/', requireAuth, (req, res) => {
   const estoque = filterByEmpresas(latestData.estoque, allowed);
   const ranking = filterByEmpresas(latestData.ranking, allowed);
   const clientes = filterByEmpresas(latestData.clientes, allowed);
-  const metas = filterByEmpresas(latestData.metas, allowed);
-  const metaSegmento = filterByEmpresas(latestData.metaSegmento, allowed);
-  const metaProduto = filterByEmpresas(latestData.metaProduto, allowed);
   const transferencias = filterTransferencias(latestData.transferencias, allowed);
   const meta = latestData.meta || {};
 
   // Estoque por Filial e' a UNICA visao que foge da regra de "cada usuario so ve as empresas
   // que tem vinculo" - a pedido do usuario, todo mundo precisa saber o estoque de TODAS as
-  // filiais ali, mesmo que os outros filtros (Estoque & Ressuprimento, Giro & Estoque, Meta,
-  // Pedidos, Transferencias) continuem escopados por USUARIOS_EMPRESAS normalmente. Por isso
+  // filiais ali, mesmo que os outros filtros (Estoque & Ressuprimento, Giro & Estoque,
+  // Transferencias) continuem escopados por USUARIOS_EMPRESAS normalmente. Por isso
   // esses dois usam latestData.* direto (sem filterByEmpresas/filterTransferencias).
   const estoqueTodasEmpresas = latestData.estoque || [];
   const transferenciasTodasEmpresas = latestData.transferencias || [];
@@ -375,9 +369,6 @@ app.get('/', requireAuth, (req, res) => {
     .replaceAll('__DATA_JSON__', jsonForScript(estoque))
     .replaceAll('__RANKING_JSON__', jsonForScript(ranking))
     .replaceAll('__CLIENTES_JSON__', jsonForScript(clientes))
-    .replaceAll('__METAS_JSON__', jsonForScript(metas))
-    .replaceAll('__META_SEGMENTO_JSON__', jsonForScript(metaSegmento))
-    .replaceAll('__META_PRODUTO_JSON__', jsonForScript(metaProduto))
     .replaceAll('__TRANSFERENCIAS_JSON__', jsonForScript(transferencias))
     .replaceAll('__ESTOQUE_TODAS_EMPRESAS_JSON__', jsonForScript(estoqueTodasEmpresas))
     .replaceAll('__TRANSFERENCIAS_TODAS_EMPRESAS_JSON__', jsonForScript(transferenciasTodasEmpresas))
