@@ -1463,8 +1463,8 @@
         Tempo de Reposição (lead time) = dias ajustável acima, padrão 12 &middot;
         Estoque máximo = Ponto de pedido + lote médio de compra (<code>ENTRADAS_TRANSF_ENTRADAS</code>, últimos 4 meses) &middot;
         Dias Estimados = Estoque Atual ÷ Consumo Médio Diário (quantos dias o estoque de hoje ainda cobre, até zerar — diferente de "Pedir em", que é até bater o ponto de ressuprimento) &middot;
-        Data prevista do pedido = hoje + (Estoque atual − Ponto de pedido) ÷ Consumo médio diário.
-        Linhas "FRETE" (frete/transporte) foram excluídas por não serem produto de estoque.
+        Data prevista do pedido = hoje + (Estoque atual − Ponto de pedido) ÷ Consumo médio diário &middot;
+        Mostra só produtos do tipo <b>CHIP</b> (<code>CONSULTA_PRODUTOS.Tipo</code>) — acessórios, equipamentos e serviços (inclusive "FRETE") ficam de fora por não serem produto de ressuprimento.
       </div>
     </div>
     </div>
@@ -1550,7 +1550,7 @@
       <div class="footnote">
         Cada linha soma os valores de todas as filiais para o mesmo produto (Venda Dia, Venda Mês, Consumo Médio, Estoque Atual, Lote Médio de Compra) e recalcula Mínimo/Ponto de Ressuprimento/Máximo sobre esses totais, com os mesmos parâmetros da aba "Estoque &amp; Ressuprimento" &middot;
         Dias Estimados = Estoque Atual (total) ÷ Consumo Médio Diário (total) &middot;
-        Linhas "FRETE" foram excluídas por não serem produto de estoque.
+        Mostra só produtos do tipo <b>CHIP</b> (<code>CONSULTA_PRODUTOS.Tipo</code>) — acessórios, equipamentos e serviços (inclusive "FRETE") ficam de fora por não serem produto de ressuprimento.
       </div>
     </div>
     </div>
@@ -1972,8 +1972,12 @@ function recomputeDerived(row, params) {
   row._statusRank = { danger: 0, warning: 1, ok: 2, neutral: 3 }[row._statusBucket];
 }
 
+// Só produtos TIPO=CHIP (CONSULTA_PRODUTOS.Tipo, marcado em TipoChip por extract_bi.ps1) - pedido
+// do usuario 2026-09-29, só nas abas "Estoque & Ressuprimento" e "...Agrupados" (as duas que usam
+// `data`). RAW_ESTOQUE_TODAS_EMPRESAS (aba "Estoque por Filial") usa o RAW_DATA original, sem esse
+// corte - de propósito, não é engano.
 const data = RAW_DATA
-  .filter(r => r.Produto !== "FRETE")
+  .filter(r => r.Produto !== "FRETE" && r.TipoChip)
   .map(r => ({ ...r, CodEmpresa: String(r.CodEmpresa), CodProd: String(r.CodProd) }));
 
 const STATUS_LABEL = {
