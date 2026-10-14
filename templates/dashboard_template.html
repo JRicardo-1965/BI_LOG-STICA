@@ -2018,7 +2018,7 @@ function applyParams() {
 const empresas = [...new Set(data.map(r => r.Empresa))].sort();
 for (const e of empresas) {
   const opt = document.createElement("option");
-  opt.value = e; opt.textContent = e;
+  opt.value = e; opt.textContent = empresaAbrev(e);
   empresaSel.appendChild(opt);
 }
 
@@ -2062,12 +2062,14 @@ function fmtMoney(v) {
   return Number(v).toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
 }
 
+// So exibicao: tira o prefixo "AQUI TEM +" e o sufixo " - AQT+", sigla em maiusculas
+// (ex: "SPi - AQT+" -> "SPI"). Filtros/agrupamentos continuam usando o nome original como chave.
 function empresaAbrev(nome) {
-  return (nome || "").replace(/^AQUI TEM\s*\+\s*/i, "").trim();
+  return (nome || "").replace(/^AQUI TEM\s*\+\s*/i, "").replace(/\s*-\s*AQT\s*\+\s*$/i, "").trim().toUpperCase();
 }
 
 function empresaBadgeHtml(nome) {
-  return `<span class="ruptura-empresa-tag" title="${nome}">${empresaAbrev(nome)}</span>`;
+  return `<span class="ruptura-empresa-tag" title="${empresaAbrev(nome)}">${empresaAbrev(nome)}</span>`;
 }
 
 function buildTsv(headers, rows) {
@@ -2263,7 +2265,7 @@ document.getElementById("clear-filters").addEventListener("click", () => {
 document.getElementById("copy-estoque-btn").addEventListener("click", () => {
   const headers = ["Empresa", "Produto", "Venda Dia", "Venda Mês", "Consumo Médio Diário", "Estoque Atual", "Dias Estimados", "Mínimo", "Ponto Ressuprimento", "Máximo", "Pedir em (dias)", "Data Prevista Pedido", "Situação"];
   const rowsOut = lastRenderedRows.map(r => [
-    r.Empresa, r.Produto, r.VendaDia, r.VendaMes, r.ConsumoMedioDiario, r.EstoqueAtual, r._diasEstoque,
+    empresaAbrev(r.Empresa), r.Produto, r.VendaDia, r.VendaMes, r.ConsumoMedioDiario, r.EstoqueAtual, r._diasEstoque,
     r.EstoqueSeguranca_Minimo, r.PontoRessuprimento, r.EstoqueMaximo,
     r._diasParaPedido, r._dataPedido, STATUS_LABEL[r._statusBucket]
   ]);
@@ -2631,7 +2633,7 @@ initFiltrosMobile("transf");
     const empresaVal = empresaSel.value;
     const produtoVal = produtoInput.value;
     const parts = [];
-    if (empresaVal) parts.push(`Empresa: ${empresaVal}`);
+    if (empresaVal) parts.push(`Empresa: ${empresaAbrev(empresaVal)}`);
     if (produtoVal) parts.push(`Produto: ${produtoVal}`);
     filtersNote.textContent = parts.length ? `Filtrado por ${parts.join(" · ")}` : "Todas as empresas e produtos";
 
@@ -2737,7 +2739,7 @@ initFiltrosMobile("transf");
   for (const sel of [empresaSelAbc, empresaSelExcesso]) {
     for (const e of empresasDistintas) {
       const opt = document.createElement("option");
-      opt.value = e; opt.textContent = e;
+      opt.value = e; opt.textContent = empresaAbrev(e);
       sel.appendChild(opt);
     }
   }
@@ -2872,7 +2874,7 @@ initFiltrosMobile("transf");
   });
   document.getElementById("copy-abc-btn").addEventListener("click", () => {
     const headers = ["Empresa", "Produto", "Valor Vendido no Mês", "Média Diária no Mês", "Qtd Vendida no Mês", "Qtd Média Diária no Mês", "% do Total", "% Acumulado", "Classe"];
-    const rowsOut = lastRenderedAbc.map(r => [r.Empresa, r.Produto, r.VendaMesValor, r._mediaDiariaMes, r.VendaMes, r._qtdMediaDiariaMes, r._pctDoTotal, r._pctAcumulado, r._classeAbc]);
+    const rowsOut = lastRenderedAbc.map(r => [empresaAbrev(r.Empresa), r.Produto, r.VendaMesValor, r._mediaDiariaMes, r.VendaMes, r._qtdMediaDiariaMes, r._pctDoTotal, r._pctAcumulado, r._classeAbc]);
     copyToExcel(headers, rowsOut, document.getElementById("copy-abc-status"));
   });
 
@@ -3032,7 +3034,7 @@ initFiltrosMobile("transf");
   });
   document.getElementById("copy-excesso-btn").addEventListener("click", () => {
     const headers = ["Empresa", "Produto", "Estoque Atual", "Estoque Máximo", "Excesso (unid.)", "Cobertura (dias)", "Valor Equivalente"];
-    const rowsOut = lastRenderedExc.map(r => [r.Empresa, r.Produto, r.EstoqueAtual, r.EstoqueMaximo, r._excesso, r._coberturaDias, r._valorParado]);
+    const rowsOut = lastRenderedExc.map(r => [empresaAbrev(r.Empresa), r.Produto, r.EstoqueAtual, r.EstoqueMaximo, r._excesso, r._coberturaDias, r._valorParado]);
     copyToExcel(headers, rowsOut, document.getElementById("copy-excesso-status"));
   });
 
@@ -3202,8 +3204,8 @@ initFiltrosMobile("transf");
 
   const origensDistintas = [...new Set(dados.map(r => r.EmpresaOrigem))].sort((a, b) => a.localeCompare(b, "pt-BR"));
   const destinosDistintos = [...new Set(dados.map(r => r.EmpresaDestino))].sort((a, b) => a.localeCompare(b, "pt-BR"));
-  for (const e of origensDistintas) { const opt = document.createElement("option"); opt.value = e; opt.textContent = e; empresaOrigemSel.appendChild(opt); }
-  for (const e of destinosDistintos) { const opt = document.createElement("option"); opt.value = e; opt.textContent = e; empresaDestinoSel.appendChild(opt); }
+  for (const e of origensDistintas) { const opt = document.createElement("option"); opt.value = e; opt.textContent = empresaAbrev(e); empresaOrigemSel.appendChild(opt); }
+  for (const e of destinosDistintos) { const opt = document.createElement("option"); opt.value = e; opt.textContent = empresaAbrev(e); empresaDestinoSel.appendChild(opt); }
 
   let sortKeyDetalhe = "Data", sortDirDetalhe = -1;
   let sortKeyRotas = "Valor", sortDirRotas = -1;
@@ -3241,7 +3243,8 @@ initFiltrosMobile("transf");
     const rotaMap = new Map();
     for (const r of rows) {
       const key = `${r.EmpresaOrigem} → ${r.EmpresaDestino}`;
-      if (!rotaMap.has(key)) rotaMap.set(key, { Rota: key, seqs: new Set(), Unidades: 0, Valor: 0 });
+      // key (nome original) agrupa; Rota e' so o texto exibido (siglas)
+      if (!rotaMap.has(key)) rotaMap.set(key, { Rota: `${empresaAbrev(r.EmpresaOrigem)} → ${empresaAbrev(r.EmpresaDestino)}`, seqs: new Set(), Unidades: 0, Valor: 0 });
       const g = rotaMap.get(key);
       g.seqs.add(r.Seq);
       g.Unidades += r.Qte;
@@ -3270,8 +3273,8 @@ initFiltrosMobile("transf");
     document.getElementById("tbody-transf-detalhe").innerHTML = detalhe.map(r => `
       <tr class="${r.AceiteDado ? "" : "row-warning"}">
         <td>${fmtDate(r.Data)}</td>
-        <td>${empresaBadgeHtml(r.EmpresaOrigem)}${r.EmpresaOrigem}</td>
-        <td>${empresaBadgeHtml(r.EmpresaDestino)}${r.EmpresaDestino}</td>
+        <td>${empresaBadgeHtml(r.EmpresaOrigem)}</td>
+        <td>${empresaBadgeHtml(r.EmpresaDestino)}</td>
         <td class="produto-name" title="${r.Produto}">${r.Produto}</td>
         <td class="num-cell">${fmtNum(r.Qte)}</td>
         <td class="num-cell">${fmtMoney(r.Total)}</td>
@@ -3307,7 +3310,7 @@ initFiltrosMobile("transf");
   });
   document.getElementById("copy-transf-btn").addEventListener("click", () => {
     const headers = ["Data", "Origem", "Destino", "Produto", "Qtd", "Valor", "Aceite", "Data do Aceite", "Dias até Aceite"];
-    const rowsOut = lastRenderedDetalhe.map(r => [r.Data, r.EmpresaOrigem, r.EmpresaDestino, r.Produto, r.Qte, r.Total, r.AceiteDado ? "ACEITE DADO" : "ACEITE NÃO DADO", r.DataAceite || "", r.DiasParaAceite === null || r.DiasParaAceite === undefined ? "" : r.DiasParaAceite]);
+    const rowsOut = lastRenderedDetalhe.map(r => [r.Data, empresaAbrev(r.EmpresaOrigem), empresaAbrev(r.EmpresaDestino), r.Produto, r.Qte, r.Total, r.AceiteDado ? "ACEITE DADO" : "ACEITE NÃO DADO", r.DataAceite || "", r.DiasParaAceite === null || r.DiasParaAceite === undefined ? "" : r.DiasParaAceite]);
     copyToExcel(headers, rowsOut, document.getElementById("copy-transf-status"));
   });
 
@@ -3357,10 +3360,11 @@ initFiltrosMobile("transf");
     const produtos = Array.from(new Set(estoqueRows.map(r => r.Produto))).sort((a, b) => a.localeCompare(b, "pt-BR"));
 
     const empresas = Array.from(new Set(estoqueRows.map(r => r.Empresa))).sort((a, b) => {
-      const ra = empresaOrderIndex(empresaAbrev(a));
-      const rb = empresaOrderIndex(empresaAbrev(b));
+      // ordena pelo nome original (empresaAbrev agora e' so exibicao, em maiusculas)
+      const ra = empresaOrderIndex(a);
+      const rb = empresaOrderIndex(b);
       if (ra !== rb) return ra - rb;
-      return empresaAbrev(a).localeCompare(empresaAbrev(b), "pt-BR");
+      return a.localeCompare(b, "pt-BR");
     });
 
     const estoqueMap = {};
