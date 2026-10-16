@@ -202,8 +202,22 @@ function requireAuth(req, res, next) {
   }
   req.userEmail = payload.email;
   req.userNome = usuario.nome || payload.email;
+  req.abas = abasValidas(payload.abas); // null = todas as abas
   next();
 }
+
+// --- abas liberadas (2026-10-16, Modulo de Acessos -> Portal -> token do /sso) --------------------------
+// O Portal manda no token do /sso a lista de abas do usuario neste BI SO quando ha restricao
+// (USUARIOS_SIS_BI_ABAS); sem o campo = todas. A lista fica no cookie de sessao (assinado) e vale ate o
+// proximo login pelo Portal. Aba nao liberada: some da tela E o servidor nao manda os dados dela.
+const ABAS_LOGISTICA = ['estoque', 'consolidado', 'giro', 'transferencias', 'estoquefilial'];
+function abasValidas(abas) {
+  if (!Array.isArray(abas)) return null;
+  // lado seguro: lista que so tem abas desconhecidas vira "nenhuma aba", nunca "todas"
+  return [...new Set(abas.map(String).filter((a) => ABAS_LOGISTICA.includes(a)))];
+}
+const abaLiberada = (abas, aba) => !abas || abas.includes(aba);
+const algumaLiberada = (abas, lista) => lista.some((a) => abaLiberada(abas, a));
 
 const loginLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
@@ -213,26 +227,10 @@ const loginLimiter = rateLimit({
   message: { ok: false, error: 'Muitas tentativas de login. Tente de novo em alguns minutos.' }
 });
 
-app.post('/api/login', express.json(), loginLimiter, async (req, res) => {
-  const email = String((req.body && req.body.email) || '').trim();
-  const senha = String((req.body && req.body.senha) || '');
-  if (!email || !senha) return res.status(400).json({ ok: false, error: 'Informe e-mail e senha.' });
-  if (!latestData) return res.status(503).json({ ok: false, error: 'Ainda não há dados sincronizados neste servidor.' });
-
-  const usuario = usuarioAtivo(email);
-  if (!usuario) return res.status(401).json({ ok: false, error: 'E-mail ou senha incorretos.' });
-
-  const ok = await bcrypt.compare(senha, usuario.passwordHash);
-  if (!ok) return res.status(401).json({ ok: false, error: 'E-mail ou senha incorretos.' });
-
-  const token = jwt.sign({ email: usuario.email }, SESSION_SECRET, { expiresIn: '12h' });
-  res.cookie('session', token, {
-    httpOnly: true,
-    secure: IS_PROD,
-    sameSite: 'lax',
-    maxAge: 12 * 60 * 60 * 1000
-  });
-  res.json({ ok: true });
+// Login direto por senha DESATIVADO (2026-10-16): a permissao por aba so chega pelo token do Portal;
+// um login direto abriria todas as abas. A pagina /login ja redirecionava para o Portal.
+app.post('/api/login', express.json(), loginLimiter, (req, res) => {
+  res.status(403).json({ ok: false, error: 'Entre pelo Portal BI.', portal: `${PORTAL_URL}/login` });
 });
 
 app.post('/api/logout', (req, res) => {
@@ -263,7 +261,8 @@ app.get('/sso', (req, res) => {
   const usuario = usuarioAtivo(payload.email);
   if (!usuario) return res.redirect('/login?desativado=1');
 
-  const sessionToken = jwt.sign({ email: usuario.email }, SESSION_SECRET, { expiresIn: '12h' });
+  const abas = abasValidas(payload.abas);
+  const sessionToken = jwt.sign(abas != null ? { email: usuario.email, abas } : { email: usuario.email }, SESSION_SECRET, { expiresIn: '12h' });
   res.cookie('session', sessionToken, {
     httpOnly: true,
     secure: IS_PROD,
@@ -347,10 +346,16 @@ app.get('/', requireAuth, (req, res) => {
   }
 
   const allowed = empresasDoUsuario(req.userEmail);
-  const estoque = filterByEmpresas(latestData.estoque, allowed);
-  const ranking = filterByEmpresas(latestData.ranking, allowed);
-  const clientes = filterByEmpresas(latestData.clientes, allowed);
-  const transferencias = filterTransferencias(latestData.transferencias, allowed);
+  // Cada bloco de dados so vai se ALGUMA aba que o usa estiver liberada (mapa conferido nos init*Tab do
+  // template): RAW_DATA -> estoque/consolidado/giro; RAW_RANKING -> popup de ranking (botoes dentro da aba
+  // estoque); RAW_TRANSFERENCIAS -> transferencias; *_TODAS_EMPRESAS -> estoquefilial. RAW_CLIENTES so
+  // alimenta um helper global (cores de segmento) que nenhuma aba chama hoje - vai se houver alguma aba.
+  const ab = req.abas;
+  const se = (abas, valor, vazio) => (algumaLiberada(ab, abas) ? valor() : vazio);
+  const estoque = se(['estoque', 'consolidado', 'giro'], () => filterByEmpresas(latestData.estoque, allowed), []);
+  const ranking = se(['estoque'], () => filterByEmpresas(latestData.ranking, allowed), []);
+  const clientes = se(ABAS_LOGISTICA, () => filterByEmpresas(latestData.clientes, allowed), []);
+  const transferencias = se(['transferencias'], () => filterTransferencias(latestData.transferencias, allowed), []);
   const meta = latestData.meta || {};
 
   // Estoque por Filial e' a UNICA visao que foge da regra de "cada usuario so ve as empresas
@@ -358,8 +363,8 @@ app.get('/', requireAuth, (req, res) => {
   // filiais ali, mesmo que os outros filtros (Estoque & Ressuprimento, Giro & Estoque,
   // Transferencias) continuem escopados por USUARIOS_EMPRESAS normalmente. Por isso
   // esses dois usam latestData.* direto (sem filterByEmpresas/filterTransferencias).
-  const estoqueTodasEmpresas = latestData.estoque || [];
-  const transferenciasTodasEmpresas = latestData.transferencias || [];
+  const estoqueTodasEmpresas = se(['estoquefilial'], () => latestData.estoque || [], []);
+  const transferenciasTodasEmpresas = se(['estoquefilial'], () => latestData.transferencias || [], []);
   const outrosSistemas = outrosSistemasDoUsuario(req.userEmail);
 
   const html = TEMPLATE
@@ -382,7 +387,8 @@ app.get('/', requireAuth, (req, res) => {
     .replaceAll('__DH_ESTOQUE__', meta.DataHoraEstoque || 'sem dados')
     .replaceAll('__HOSTED_USER_LABEL__', escapeHtml(req.userNome))
     .replaceAll('__HOSTED_SESSION__', '1')
-    .replaceAll('__OUTROS_SISTEMAS_JSON__', jsonForScript(outrosSistemas));
+    .replaceAll('__OUTROS_SISTEMAS_JSON__', jsonForScript(outrosSistemas))
+    .replaceAll('__ABAS_PERMITIDAS_JSON__', jsonForScript(ab == null ? null : ab));
 
   res.set('Cache-Control', 'no-store');
   res.send(html);

@@ -1923,6 +1923,13 @@ const HOSTED_SESSION = "__HOSTED_SESSION__" === "1";
 // Outros módulos BI que este usuário também acessa (seletor "Trocar de módulo" no cabeçalho) -
 // vazio no build local e no hospedado quando o usuário só tem acesso a este BI.
 const RAW_OUTROS_SISTEMAS = __OUTROS_SISTEMAS_JSON__;
+// Abas liberadas para este usuario (Modulo de Acessos -> Portal). null = todas. O servidor ja nao manda
+// os dados das abas nao liberadas; aqui so some com os botoes e abre na primeira aba liberada.
+const ABAS_PERMITIDAS = __ABAS_PERMITIDAS_JSON__;
+// Aba inicial = primeira liberada (calculada ja aqui porque o render da aba "Estoque & Ressuprimento"
+// roda antes do initTabs). null = nenhuma aba liberada.
+const ABAS_LOGISTICA = ["estoque", "consolidado", "giro", "transferencias", "estoquefilial"];
+const ABA_INICIAL = ABAS_LOGISTICA.find((t) => !Array.isArray(ABAS_PERMITIDAS) || ABAS_PERMITIDAS.includes(t)) || null;
 
 const today = new Date("__TODAY_ISO__T00:00:00");
 const TODAY_ISO_STR = "__TODAY_ISO__";
@@ -2304,7 +2311,8 @@ document.getElementById("reset-params").addEventListener("click", () => {
 });
 
 applyParams();
-render();
+// "Estoque & Ressuprimento" e' a aba visivel no load - render inicial so se ela estiver liberada.
+if (ABA_INICIAL === "estoque") render();
 
 // Aba "Ressuprimento Agrupado" (2026-09-28): mesmas linhas de `data` (Empresa x Produto), mas
 // somadas por Produto (todas as filiais juntas) e recalculadas com a mesma formula/params da aba
@@ -2726,6 +2734,23 @@ initFiltrosMobile("transf");
   for (const t of tabs) {
     btns[t].addEventListener("click", () => activate(t));
   }
+
+  // permissao por aba: tira o botao das abas nao liberadas e, se "Estoque & Ressuprimento" nao estiver
+  // liberada, abre na primeira que estiver (o conteudo das outras fica escondido e sem dados)
+  const liberadas = tabs.filter((t) => !Array.isArray(ABAS_PERMITIDAS) || ABAS_PERMITIDAS.includes(t));
+  if (liberadas.length < tabs.length) {
+    for (const t of tabs) if (!liberadas.includes(t)) btns[t].remove();
+    if (!liberadas.length) {
+      for (const t of tabs) contents[t].classList.add("is-hidden");
+      const aviso = document.createElement("p");
+      aviso.className = "tab-context-note";
+      aviso.textContent = "Nenhuma aba deste módulo está liberada para o seu usuário. Fale com o administrador.";
+      contents[tabs[0]].parentNode.insertBefore(aviso, contents[tabs[0]]);
+    }
+  }
+  // a ativacao da aba inicial (quando nao e' "estoque") fica pro fim do script: os init*Tab de
+  // Giro/Transferencias/Estoque por Filial rodam DEPOIS deste bloco e so ai registram o render deles.
+  window.activateTab = activate;
 })();
 
 (function initGiroTab() {
@@ -3449,5 +3474,9 @@ initFiltrosMobile("transf");
 
   window.renderEstoqueFilial = render;
 })();
+
+// permissao por aba: "Estoque & Ressuprimento" nao liberada -> abre na primeira aba liberada
+// (aqui no fim, depois de todos os init*Tab registrarem o render).
+if (ABA_INICIAL && ABA_INICIAL !== "estoque" && window.activateTab) window.activateTab(ABA_INICIAL);
 
 </script>
