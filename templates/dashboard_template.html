@@ -552,6 +552,9 @@
 
   .table-scroll { overflow-x: auto; }
   table { width: 100%; border-collapse: collapse; font-size: 11.5px; min-width: 900px; }
+  /* O template nao tem <!DOCTYPE> (o Artifact poe; o backend serve como esta) -> no site hospedado a pagina
+     roda em modo de compatibilidade, onde tabela NAO herda a cor do texto e fica preta (ilegivel no tema escuro). */
+  table { color: inherit; }
   thead th {
     text-align: left;
     padding: 6px 8px;
@@ -1333,6 +1336,7 @@
       <button class="tab-btn is-active" id="tab-btn-estoque" type="button" data-tab="estoque">Estoque &amp; Ressuprimento</button>
       <button class="tab-btn" id="tab-btn-consolidado" type="button" data-tab="consolidado">Estoque &amp; Ressuprimento Agrupados</button>
       <button class="tab-btn" id="tab-btn-giro" type="button" data-tab="giro">Giro &amp; Estoque</button>
+      <button class="tab-btn" id="tab-btn-giroagrupado" type="button" data-tab="giroagrupado">Giro &amp; Estoque Agrupados</button>
       <button class="tab-btn" id="tab-btn-transferencias" type="button" data-tab="transferencias">Transferências</button>
       <button class="tab-btn" id="tab-btn-estoquefilial" type="button" data-tab="estoquefilial">Estoque por Filial</button>
     </div>
@@ -1669,6 +1673,109 @@
     </div>
     </div>
 
+    <div id="tab-content-giroagrupado" class="is-hidden">
+    <p class="tab-context-note">
+      <b>Giro &amp; Estoque Agrupados</b> · todos os produtos de todas as filiais agrupados em uma única linha por produto · mesmas visões da aba "Giro &amp; Estoque" (Curva ABC e Excesso de Estoque), recalculadas sobre os totais da rede.
+    </p>
+    <div class="panel">
+      <div class="cmp-metric-toggle" id="gag-view-toggle">
+        <button type="button" class="cmp-metric-btn is-active" data-view="abc">📊 Curva ABC</button>
+        <button type="button" class="cmp-metric-btn" data-view="excesso">📦 Excesso de Estoque</button>
+      </div>
+
+      <div id="gag-view-abc">
+        <button class="mob-filtros-btn" type="button" id="gagabc-filtros-btn">🔽 Filtros</button>
+        <div class="mob-filtros-backdrop" id="gagabc-filtros-backdrop"></div>
+        <div class="filters filtros-sheet" id="gagabc-filtros-sheet">
+          <div class="mob-filtros-close"><button type="button" id="gagabc-filtros-close-btn" aria-label="Fechar filtros">✕</button></div>
+          <div class="field">
+            <label for="f-gag-classe">Classe</label>
+            <select id="f-gag-classe">
+              <option value="">Todas as classes</option>
+              <option value="A">A</option>
+              <option value="B">B</option>
+              <option value="C">C</option>
+            </select>
+          </div>
+          <div class="spacer"></div>
+          <span class="result-count" id="result-count-gag-abc"></span>
+          <button class="clear-btn" id="clear-filters-gag-abc">Limpar filtros</button>
+          <button class="clear-btn copy-btn" id="copy-gag-abc-btn" type="button">📋 Copiar para Excel</button>
+          <span class="copy-status" id="copy-gag-abc-status"></span>
+        </div>
+        <div class="kpis kpis-4" id="kpis-gag-abc">
+          <div class="kpi kpi-static k-ok"><span class="kpi-icon">🟢</span><div class="num" id="count-gag-abc-a">–</div><div class="lbl">Classe A (giro alto)</div></div>
+          <div class="kpi kpi-static k-warning"><span class="kpi-icon">🟡</span><div class="num" id="count-gag-abc-b">–</div><div class="lbl">Classe B</div></div>
+          <div class="kpi kpi-static"><span class="kpi-icon">⚪</span><div class="num" id="count-gag-abc-c">–</div><div class="lbl">Classe C (giro baixo)</div></div>
+          <div class="kpi kpi-static"><span class="kpi-icon">💰</span><div class="num" id="total-gag-abc-valor">–</div><div class="lbl">Total vendido no mês (rede)</div></div>
+        </div>
+        <div class="table-scroll">
+          <table id="tbl-gag-abc">
+            <thead>
+              <tr>
+                <th data-key="Produto"><button>Produto <span class="sort-arrow"></span></button></th>
+                <th class="num-cell" data-key="_numFiliais"><button>Nº de<br>Filiais <span class="sort-arrow"></span></button></th>
+                <th class="num-cell" data-key="VendaMesValor"><button>Valor Vendido<br>no Mês <span class="sort-arrow"></span></button></th>
+                <th class="num-cell" data-key="_mediaDiariaMes"><button>Média Diária<br>no Mês <span class="sort-arrow"></span></button></th>
+                <th class="num-cell" data-key="VendaMes"><button>Qtd Vendida<br>no Mês <span class="sort-arrow"></span></button></th>
+                <th class="num-cell" data-key="_qtdMediaDiariaMes"><button>Qtd Média<br>Diária no Mês <span class="sort-arrow"></span></button></th>
+                <th class="num-cell" data-key="_pctDoTotal"><button>% do<br>Total <span class="sort-arrow"></span></button></th>
+                <th class="num-cell" data-key="_pctAcumulado"><button>% Acumu-<br>lado <span class="sort-arrow"></span></button></th>
+                <th data-key="_classeAbc"><button>Classe <span class="sort-arrow"></span></button></th>
+              </tr>
+            </thead>
+            <tbody id="tbody-gag-abc"></tbody>
+          </table>
+        </div>
+        <div class="empty-state" id="empty-state-gag-abc" style="display:none;">Nenhum produto corresponde aos filtros aplicados.</div>
+        <div class="footnote">
+          Cada linha soma a venda do mês de todas as filiais para o mesmo produto e a Curva ABC é recalculada nesse nível (por produto, não por filial × produto) &middot;
+          Classe A = produtos que somam até 80% do valor total vendido na rede &middot; Classe B = até 95% acumulado &middot; Classe C = os 5% finais &middot;
+          Médias diárias = total do mês ÷ dias já decorridos do mês corrente (ritmo, não projeção) &middot;
+          Nº de Filiais = filiais que venderam o produto no mês.
+        </div>
+      </div>
+
+      <div id="gag-view-excesso" class="is-hidden">
+        <div class="filters">
+          <div class="spacer"></div>
+          <span class="result-count" id="result-count-gag-excesso"></span>
+          <button class="clear-btn copy-btn" id="copy-gag-excesso-btn" type="button">📋 Copiar para Excel</button>
+          <span class="copy-status" id="copy-gag-excesso-status"></span>
+        </div>
+        <div class="kpis kpis-4" id="kpis-gag-excesso">
+          <div class="kpi kpi-static k-warning"><span class="kpi-icon">⚠️</span><div class="num" id="count-gag-excesso">–</div><div class="lbl">Produtos com excesso na rede</div></div>
+          <div class="kpi kpi-static"><span class="kpi-icon">📦</span><div class="num" id="total-gag-excesso-unidades">–</div><div class="lbl">Unidades em excesso</div></div>
+          <div class="kpi kpi-static"><span class="kpi-icon">💰</span><div class="num" id="total-gag-excesso-valor">–</div><div class="lbl">Valor equivalente parado</div></div>
+          <div class="kpi kpi-static"><span class="kpi-icon">⏱️</span><div class="num" id="media-gag-excesso-cobertura">–</div><div class="lbl">Cobertura média (dias)</div></div>
+        </div>
+        <div class="table-scroll">
+          <table id="tbl-gag-excesso">
+            <thead>
+              <tr>
+                <th data-key="Produto"><button>Produto <span class="sort-arrow"></span></button></th>
+                <th class="num-cell" data-key="_numFiliais"><button>Nº de<br>Filiais <span class="sort-arrow"></span></button></th>
+                <th class="num-cell" data-key="EstoqueAtual"><button>Estoque<br>Atual <span class="sort-arrow"></span></button></th>
+                <th class="num-cell" data-key="EstoqueMaximo"><button>Estoque<br>Máximo <span class="sort-arrow"></span></button></th>
+                <th class="num-cell" data-key="_excesso"><button>Excesso<br>(unid.) <span class="sort-arrow"></span></button></th>
+                <th class="num-cell" data-key="_coberturaDias"><button>Cobertura<br>(dias) <span class="sort-arrow"></span></button></th>
+                <th class="num-cell" data-key="_valorParado"><button>Valor<br>Equivalente <span class="sort-arrow"></span></button></th>
+              </tr>
+            </thead>
+            <tbody id="tbody-gag-excesso"></tbody>
+          </table>
+        </div>
+        <div class="empty-state" id="empty-state-gag-excesso" style="display:none;">Nenhum produto com excesso de estoque no total da rede.</div>
+        <div class="footnote">
+          Cada linha soma Estoque Atual, Consumo Médio e Lote Médio de Compra de todas as filiais e recalcula o Estoque Máximo sobre esses totais, com os mesmos parâmetros da aba "Giro &amp; Estoque" (10 dias de segurança + 12 de lead time + lote médio) &middot;
+          Excesso = Estoque Atual − Estoque Máximo da rede (só entra quando positivo): sobra numa filial é compensada pela falta em outra, então o total pode ser menor que a soma dos excessos por filial &middot;
+          Cobertura = Estoque Atual ÷ Consumo Médio Diário da rede &middot;
+          Valor Equivalente = Excesso × preço médio de venda do mês na rede (Valor ÷ Qtd) — estimativa de capital parado a preço de venda, não custo de compra.
+        </div>
+      </div>
+    </div>
+    </div>
+
     <div id="tab-content-transferencias" class="is-hidden">
     <div class="panel">
       <button class="mob-filtros-btn" type="button" id="transf-filtros-btn">🔽 Filtros</button>
@@ -1928,7 +2035,7 @@ const RAW_OUTROS_SISTEMAS = __OUTROS_SISTEMAS_JSON__;
 const ABAS_PERMITIDAS = __ABAS_PERMITIDAS_JSON__;
 // Aba inicial = primeira liberada (calculada ja aqui porque o render da aba "Estoque & Ressuprimento"
 // roda antes do initTabs). null = nenhuma aba liberada.
-const ABAS_LOGISTICA = ["estoque", "consolidado", "giro", "transferencias", "estoquefilial"];
+const ABAS_LOGISTICA = ["estoque", "consolidado", "giro", "giroagrupado", "transferencias", "estoquefilial"];
 const ABA_INICIAL = ABAS_LOGISTICA.find((t) => !Array.isArray(ABAS_PERMITIDAS) || ABAS_PERMITIDAS.includes(t)) || null;
 
 const today = new Date("__TODAY_ISO__T00:00:00");
@@ -2476,6 +2583,7 @@ initFiltrosMobile("estoque");
 initFiltrosMobile("consolidado");
 initFiltrosMobile("abc");
 initFiltrosMobile("excesso");
+initFiltrosMobile("gagabc");
 initFiltrosMobile("transf");
 
 // Botão "⋯" que recolhe/expande o header-right no celular - mesmo padrão do BI Comercial.
@@ -2702,7 +2810,7 @@ initFiltrosMobile("transf");
 })();
 
 (function initTabs() {
-  const tabs = ["estoque", "consolidado", "giro", "transferencias", "estoquefilial"];
+  const tabs = ["estoque", "consolidado", "giro", "giroagrupado", "transferencias", "estoquefilial"];
   const btns = {};
   const contents = {};
   for (const t of tabs) {
@@ -2718,6 +2826,7 @@ initFiltrosMobile("transf");
     }
     if (tab === "consolidado" && window.renderConsolidado) window.renderConsolidado();
     if (tab === "giro" && window.renderGiro) window.renderGiro();
+    if (tab === "giroagrupado" && window.renderGiroAgrupado) window.renderGiroAgrupado();
     if (tab === "transferencias" && window.renderTransferencias) window.renderTransferencias();
     if (tab === "estoquefilial" && window.renderEstoqueFilial) window.renderEstoqueFilial();
 
@@ -3064,6 +3173,190 @@ initFiltrosMobile("transf");
   });
 
   window.renderGiro = function () {
+    renderAbc();
+    renderExcesso();
+  };
+})();
+
+// Aba "Giro & Estoque Agrupados" (2026-10-19): mesma premissa da "Estoque & Ressuprimento Agrupados" -
+// uma linha por Produto somando todas as filiais e recalculando os indicadores sobre os totais. Mesma base
+// da aba Giro (RAW_DATA) e mesmos parametros dela (os padrao da extracao, 10/12 - nao os ajustaveis da aba
+// Estoque), pra que um produto vendido em uma filial so de exatamente os mesmos numeros nas duas abas.
+(function initGiroAgrupadoTab() {
+  const classeSel = document.getElementById("f-gag-classe");
+  const diaDoMes = Math.max(1, today.getDate());
+  const classeBadge = { A: "c-ok", B: "c-warning", C: "c-danger" };
+
+  const viewAbc = document.getElementById("gag-view-abc");
+  const viewExcesso = document.getElementById("gag-view-excesso");
+  document.querySelectorAll("#gag-view-toggle .cmp-metric-btn").forEach(btn => {
+    btn.addEventListener("click", () => {
+      document.querySelectorAll("#gag-view-toggle .cmp-metric-btn").forEach(b => b.classList.remove("is-active"));
+      btn.classList.add("is-active");
+      viewAbc.classList.toggle("is-hidden", btn.dataset.view !== "abc");
+      viewExcesso.classList.toggle("is-hidden", btn.dataset.view !== "excesso");
+    });
+  });
+
+  function ordena(rows, key, dir) {
+    return rows.slice().sort((a, b) => {
+      const av = a[key], bv = b[key];
+      if (typeof av === "string") return av.localeCompare(bv, "pt-BR") * dir;
+      return ((av ?? -Infinity) - (bv ?? -Infinity)) * dir;
+    });
+  }
+  function wireSort(scopeSelector, getState, setState, renderFn) {
+    document.querySelectorAll(`${scopeSelector} th[data-key] button`).forEach(btn => {
+      btn.addEventListener("click", () => {
+        const th = btn.closest("th");
+        let { sortKey, sortDir } = getState();
+        if (sortKey === th.dataset.key) sortDir *= -1; else { sortKey = th.dataset.key; sortDir = 1; }
+        setState(sortKey, sortDir);
+        document.querySelectorAll(`${scopeSelector} th[data-key] .sort-arrow`).forEach(el => el.textContent = "");
+        th.querySelector(".sort-arrow").textContent = sortDir === 1 ? "▲" : "▼";
+        renderFn();
+      });
+    });
+  }
+
+  // Soma por Produto (mesma chave do "Resumo por Produto" da aba Giro). EstoqueAtual nulo em todas as
+  // filiais continua nulo (sem estoque informado), em vez de virar zero.
+  function agrupaPorProduto() {
+    const map = new Map();
+    for (const r of RAW_DATA) {
+      let g = map.get(r.Produto);
+      if (!g) {
+        g = { Produto: r.Produto, VendaMesValor: 0, VendaMes: 0, ConsumoMedioDiario: 0, LoteMedioCompra: 0,
+              EstoqueAtual: null, _filiaisVenda: new Set(), _filiais: new Set() };
+        map.set(r.Produto, g);
+      }
+      g.VendaMesValor += (r.VendaMesValor || 0);
+      g.VendaMes += (r.VendaMes || 0);
+      g.ConsumoMedioDiario += (r.ConsumoMedioDiario || 0);
+      g.LoteMedioCompra += (r.LoteMedioCompra || 0);
+      if (r.EstoqueAtual !== null && r.EstoqueAtual !== undefined) g.EstoqueAtual = (g.EstoqueAtual || 0) + r.EstoqueAtual;
+      g._filiais.add(r.Empresa);
+      if ((r.VendaMesValor || 0) > 0) g._filiaisVenda.add(r.Empresa);
+    }
+    return [...map.values()];
+  }
+
+  // ================= CURVA ABC agrupada =================
+  let abcSortKey = "VendaMesValor", abcSortDir = -1;
+  let lastAbc = [];
+
+  function computeAbc() {
+    const rows = agrupaPorProduto().filter(g => g.VendaMesValor > 0)
+      .map(g => ({ Produto: g.Produto, VendaMesValor: g.VendaMesValor, VendaMes: g.VendaMes, _numFiliais: g._filiaisVenda.size }));
+    rows.sort((a, b) => b.VendaMesValor - a.VendaMesValor);
+    const totalValor = rows.reduce((s, r) => s + r.VendaMesValor, 0);
+    let acumulado = 0;
+    for (const r of rows) {
+      const pct = totalValor > 0 ? (r.VendaMesValor / totalValor) * 100 : 0;
+      acumulado += pct;
+      r._pctDoTotal = Math.round(pct * 100) / 100;
+      r._pctAcumulado = Math.round(acumulado * 100) / 100;
+      r._classeAbc = acumulado <= 80 ? "A" : (acumulado <= 95 ? "B" : "C");
+      r._mediaDiariaMes = Math.round((r.VendaMesValor / diaDoMes) * 100) / 100;
+      r._qtdMediaDiariaMes = Math.round((r.VendaMes / diaDoMes) * 100) / 100;
+    }
+    return { rows, totalValor };
+  }
+
+  function renderAbc() {
+    const { rows: allRows, totalValor } = computeAbc();
+    document.getElementById("count-gag-abc-a").textContent = fmtNum(allRows.filter(r => r._classeAbc === "A").length);
+    document.getElementById("count-gag-abc-b").textContent = fmtNum(allRows.filter(r => r._classeAbc === "B").length);
+    document.getElementById("count-gag-abc-c").textContent = fmtNum(allRows.filter(r => r._classeAbc === "C").length);
+    document.getElementById("total-gag-abc-valor").textContent = fmtMoney(totalValor);
+
+    const classeVal = classeSel.value;
+    const rows = ordena(classeVal ? allRows.filter(r => r._classeAbc === classeVal) : allRows, abcSortKey, abcSortDir);
+    lastAbc = rows;
+    document.getElementById("empty-state-gag-abc").style.display = rows.length ? "none" : "block";
+    document.getElementById("result-count-gag-abc").textContent = `${rows.length} de ${allRows.length} itens`;
+    document.getElementById("tbody-gag-abc").innerHTML = rows.map(r => `
+      <tr>
+        <td class="produto-name" title="${r.Produto}">${r.Produto}</td>
+        <td class="num-cell">${fmtNum(r._numFiliais)}</td>
+        <td class="num-cell">${fmtMoney(r.VendaMesValor)}</td>
+        <td class="num-cell">${fmtMoney(r._mediaDiariaMes)}</td>
+        <td class="num-cell">${fmtNum(r.VendaMes)}</td>
+        <td class="num-cell">${fmtNum(r._qtdMediaDiariaMes, 1)}</td>
+        <td class="num-cell">${fmtNum(r._pctDoTotal, 1)}%</td>
+        <td class="num-cell">${fmtNum(r._pctAcumulado, 1)}%</td>
+        <td><span class="chip ${classeBadge[r._classeAbc]}">${r._classeAbc}</span></td>
+      </tr>
+    `).join("");
+  }
+
+  wireSort("#gag-view-abc", () => ({ sortKey: abcSortKey, sortDir: abcSortDir }), (k, d) => { abcSortKey = k; abcSortDir = d; }, renderAbc);
+  classeSel.addEventListener("change", renderAbc);
+  document.getElementById("clear-filters-gag-abc").addEventListener("click", () => { classeSel.value = ""; renderAbc(); });
+  document.getElementById("copy-gag-abc-btn").addEventListener("click", () => {
+    const headers = ["Produto", "Nº de Filiais", "Valor Vendido no Mês", "Média Diária no Mês", "Qtd Vendida no Mês", "Qtd Média Diária no Mês", "% do Total", "% Acumulado", "Classe"];
+    const rowsOut = lastAbc.map(r => [r.Produto, r._numFiliais, r.VendaMesValor, r._mediaDiariaMes, r.VendaMes, r._qtdMediaDiariaMes, r._pctDoTotal, r._pctAcumulado, r._classeAbc]);
+    copyToExcel(headers, rowsOut, document.getElementById("copy-gag-abc-status"));
+  });
+
+  // ================= EXCESSO DE ESTOQUE agrupado =================
+  let excSortKey = "_excesso", excSortDir = -1;
+  let lastExc = [];
+
+  function computeExcesso() {
+    const out = [];
+    for (const g of agrupaPorProduto()) {
+      if (g.EstoqueAtual === null) continue;
+      // Maximo da rede recalculado sobre os totais com os parametros da aba Giro (padrao da extracao)
+      const tmp = { ConsumoMedioDiario: g.ConsumoMedioDiario, LoteMedioCompra: g.LoteMedioCompra, EstoqueAtual: g.EstoqueAtual };
+      recomputeDerived(tmp, DEFAULT_PARAMS);
+      if (!(g.EstoqueAtual > tmp.EstoqueMaximo)) continue;
+      const excesso = Math.round((g.EstoqueAtual - tmp.EstoqueMaximo) * 100) / 100;
+      const precoMedio = g.VendaMes > 0 ? g.VendaMesValor / g.VendaMes : 0;
+      out.push({
+        Produto: g.Produto, _numFiliais: g._filiais.size, EstoqueAtual: g.EstoqueAtual, EstoqueMaximo: tmp.EstoqueMaximo,
+        _excesso: excesso,
+        _coberturaDias: g.ConsumoMedioDiario > 0 ? Math.round((g.EstoqueAtual / g.ConsumoMedioDiario) * 10) / 10 : null,
+        _valorParado: Math.round(excesso * precoMedio * 100) / 100
+      });
+    }
+    return out;
+  }
+
+  function renderExcesso() {
+    const allRows = computeExcesso();
+    document.getElementById("count-gag-excesso").textContent = fmtNum(allRows.length);
+    document.getElementById("total-gag-excesso-unidades").textContent = fmtNum(allRows.reduce((s, r) => s + r._excesso, 0));
+    document.getElementById("total-gag-excesso-valor").textContent = fmtMoney(allRows.reduce((s, r) => s + r._valorParado, 0));
+    const comCobertura = allRows.filter(r => r._coberturaDias !== null);
+    document.getElementById("media-gag-excesso-cobertura").textContent = comCobertura.length
+      ? fmtNum(comCobertura.reduce((s, r) => s + r._coberturaDias, 0) / comCobertura.length, 0) : "—";
+
+    const rows = ordena(allRows, excSortKey, excSortDir);
+    lastExc = rows;
+    document.getElementById("empty-state-gag-excesso").style.display = rows.length ? "none" : "block";
+    document.getElementById("result-count-gag-excesso").textContent = `${rows.length} itens`;
+    document.getElementById("tbody-gag-excesso").innerHTML = rows.map(r => `
+      <tr>
+        <td class="produto-name" title="${r.Produto}">${r.Produto}</td>
+        <td class="num-cell">${fmtNum(r._numFiliais)}</td>
+        <td class="num-cell">${fmtNum(r.EstoqueAtual)}</td>
+        <td class="num-cell">${fmtNum(r.EstoqueMaximo)}</td>
+        <td class="num-cell">${fmtNum(r._excesso)}</td>
+        <td class="num-cell">${r._coberturaDias === null ? "—" : fmtNum(r._coberturaDias, 0)}</td>
+        <td class="num-cell">${fmtMoney(r._valorParado)}</td>
+      </tr>
+    `).join("");
+  }
+
+  wireSort("#gag-view-excesso", () => ({ sortKey: excSortKey, sortDir: excSortDir }), (k, d) => { excSortKey = k; excSortDir = d; }, renderExcesso);
+  document.getElementById("copy-gag-excesso-btn").addEventListener("click", () => {
+    const headers = ["Produto", "Nº de Filiais", "Estoque Atual", "Estoque Máximo", "Excesso (unid.)", "Cobertura (dias)", "Valor Equivalente"];
+    const rowsOut = lastExc.map(r => [r.Produto, r._numFiliais, r.EstoqueAtual, r.EstoqueMaximo, r._excesso, r._coberturaDias, r._valorParado]);
+    copyToExcel(headers, rowsOut, document.getElementById("copy-gag-excesso-status"));
+  });
+
+  window.renderGiroAgrupado = function () {
     renderAbc();
     renderExcesso();
   };

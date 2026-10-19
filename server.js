@@ -210,7 +210,7 @@ function requireAuth(req, res, next) {
 // O Portal manda no token do /sso a lista de abas do usuario neste BI SO quando ha restricao
 // (USUARIOS_SIS_BI_ABAS); sem o campo = todas. A lista fica no cookie de sessao (assinado) e vale ate o
 // proximo login pelo Portal. Aba nao liberada: some da tela E o servidor nao manda os dados dela.
-const ABAS_LOGISTICA = ['estoque', 'consolidado', 'giro', 'transferencias', 'estoquefilial'];
+const ABAS_LOGISTICA = ['estoque', 'consolidado', 'giro', 'giroagrupado', 'transferencias', 'estoquefilial'];
 function abasValidas(abas) {
   if (!Array.isArray(abas)) return null;
   // lado seguro: lista que so tem abas desconhecidas vira "nenhuma aba", nunca "todas"
@@ -347,12 +347,12 @@ app.get('/', requireAuth, (req, res) => {
 
   const allowed = empresasDoUsuario(req.userEmail);
   // Cada bloco de dados so vai se ALGUMA aba que o usa estiver liberada (mapa conferido nos init*Tab do
-  // template): RAW_DATA -> estoque/consolidado/giro; RAW_RANKING -> popup de ranking (botoes dentro da aba
+  // template): RAW_DATA -> estoque/consolidado/giro/giroagrupado; RAW_RANKING -> popup de ranking (botoes dentro da aba
   // estoque); RAW_TRANSFERENCIAS -> transferencias; *_TODAS_EMPRESAS -> estoquefilial. RAW_CLIENTES so
   // alimenta um helper global (cores de segmento) que nenhuma aba chama hoje - vai se houver alguma aba.
   const ab = req.abas;
   const se = (abas, valor, vazio) => (algumaLiberada(ab, abas) ? valor() : vazio);
-  const estoque = se(['estoque', 'consolidado', 'giro'], () => filterByEmpresas(latestData.estoque, allowed), []);
+  const estoque = se(['estoque', 'consolidado', 'giro', 'giroagrupado'], () => filterByEmpresas(latestData.estoque, allowed), []);
   const ranking = se(['estoque'], () => filterByEmpresas(latestData.ranking, allowed), []);
   const clientes = se(ABAS_LOGISTICA, () => filterByEmpresas(latestData.clientes, allowed), []);
   const transferencias = se(['transferencias'], () => filterTransferencias(latestData.transferencias, allowed), []);
