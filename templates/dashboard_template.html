@@ -1294,6 +1294,35 @@
   @media (prefers-reduced-motion: reduce) {
     .toast { transition: opacity .01ms; }
   }
+
+  /* ABA "ENTREGAS & PRAZOS" (2026-10-20) - escopado a #tab-content-entregas / #ent-modal; reaproveita
+     .panel/.filters/.field/.kpis/.kpi/.chip/.table-scroll/.footnote/.cmp-metric-btn das outras abas. */
+  #tab-content-entregas .ent-kpis { padding: 10px 12px 0; }
+  #tab-content-entregas .ent-kpis + .ent-kpis { padding-top: 8px; }
+  #tab-content-entregas .kpi .sub { font-size: 10px; color: var(--text-faint); line-height: 1.3; }
+  #tab-content-entregas .kpi .num small { font-size: 12px; font-weight: 500; color: var(--text-muted); }
+  #tab-content-entregas .kpi.k-confirmar .lbl::after { content: " · a confirmar"; color: var(--warning); font-weight: 600; }
+  #tab-content-entregas .ent-status { display: flex; flex-wrap: wrap; gap: 6px 16px; font-size: 11.5px; color: var(--text-muted); margin: 0 0 10px; }
+  #tab-content-entregas .ent-status b { color: var(--text); font-variant-numeric: tabular-nums; }
+  #tab-content-entregas .ent-status .is-stale { color: var(--danger); font-weight: 600; }
+  #tab-content-entregas .ent-status .is-stale b { color: var(--danger); }
+  #tab-content-entregas .ent-msg { padding: 28px 16px; text-align: center; color: var(--text-muted); font-size: 12.5px; }
+  #tab-content-entregas .ent-sec { padding: 0 12px; }
+  #tab-content-entregas .ent-nota { font-size: 11px; color: var(--text-muted); padding: 6px 12px 0; margin: 0; }
+  #tab-content-entregas .ent-pouco { color: var(--text-faint); font-style: italic; }
+  #tab-content-entregas .ent-scroll { max-height: 68vh; overflow: auto; }
+  #tab-content-entregas #tbl-ent-det tbody tr { cursor: pointer; }
+  #tab-content-entregas #tbl-ent-grupo tbody tr.ent-total td { font-weight: 700; background: var(--surface-2); }
+  #tab-content-entregas .ent-nome { max-width: 240px; overflow: hidden; text-overflow: ellipsis; }
+  #ent-modal .ent-kv { display: grid; grid-template-columns: 170px 1fr; gap: 4px 12px; font-size: 12px; margin: 0 0 12px; }
+  #ent-modal .ent-kv dt { color: var(--text-muted); }
+  #ent-modal .ent-kv dd { margin: 0; }
+  #ent-modal table { min-width: 0; }
+  #ent-modal tbody td:nth-child(3) { white-space: normal; min-width: 220px; }
+  #tab-content-entregas .kpi.kpi-static.k-danger .num { color: var(--danger); }
+  #tab-content-entregas .chip { font-size: 10.5px; padding: 2px 8px; }
+  #tab-content-entregas .chip.c-info { background: var(--accent-soft); color: var(--accent-strong); }
+  @media (max-width: 680px) { #ent-modal .ent-kv { grid-template-columns: 1fr; } }
 </style>
 
 <div class="app">
@@ -1339,6 +1368,7 @@
       <button class="tab-btn" id="tab-btn-giroagrupado" type="button" data-tab="giroagrupado">Giro &amp; Estoque Agrupados</button>
       <button class="tab-btn" id="tab-btn-transferencias" type="button" data-tab="transferencias">Transferências</button>
       <button class="tab-btn" id="tab-btn-estoquefilial" type="button" data-tab="estoquefilial">Estoque por Filial</button>
+      <button class="tab-btn" id="tab-btn-entregas" type="button" data-tab="entregas">Entregas &amp; Prazos</button>
     </div>
 
     <div id="tab-content-estoque">
@@ -1882,6 +1912,86 @@
     </div>
     </div>
 
+    <!-- ABA "ENTREGAS & PRAZOS": pedidos do Mira enviados pelos Correios x eventos da API dos Correios (banco
+         correios_gateway, extraido pelo BI Operacional; transformado por cruza_entregas.js). Dados NAO embutidos
+         (nomes de clientes): GET /api/entregas, filtrado por empresa e pela permissao da aba. -->
+    <div id="tab-content-entregas" class="is-hidden">
+    <p class="tab-context-note">
+      <b>Entregas &amp; Prazos</b> · pedidos do Mira enviados pelos Correios, acompanhados pela API dos Correios · tempos em <b>dias corridos</b>, no horário de Brasília · pedidos a partir de <b id="ent-inicio">—</b>.
+    </p>
+    <div class="ent-status" id="ent-status"></div>
+    <div class="panel">
+      <div class="ent-msg" id="ent-msg">Carregando entregas...</div>
+      <div id="ent-corpo" class="is-hidden">
+        <button class="mob-filtros-btn" type="button" id="entregas-filtros-btn">🔽 Filtros</button>
+        <div class="mob-filtros-backdrop" id="entregas-filtros-backdrop"></div>
+        <div class="filters filtros-sheet" id="entregas-filtros-sheet">
+          <div class="mob-filtros-close"><button type="button" id="entregas-filtros-close-btn" aria-label="Fechar filtros">✕</button></div>
+          <div class="field"><label for="f-ent-mes">Mês do pedido</label><select id="f-ent-mes"></select></div>
+          <div class="field"><label for="f-ent-filial">Filial</label><select id="f-ent-filial"></select></div>
+          <div class="field"><label for="f-ent-regional">Regional</label><select id="f-ent-regional"></select></div>
+          <div class="field"><label for="f-ent-uf">UF</label><select id="f-ent-uf"></select></div>
+          <div class="field"><label for="f-ent-cluster">Cluster</label><select id="f-ent-cluster"></select></div>
+          <div class="field"><label for="f-ent-cidade">Cidade</label><select id="f-ent-cidade"></select></div>
+          <div class="field"><label for="f-ent-situacao">Situação</label><select id="f-ent-situacao"></select></div>
+          <div class="spacer"></div>
+          <button class="clear-btn" id="clear-filters-entregas" type="button">Limpar filtros</button>
+        </div>
+        <div class="kpis kpis-6 ent-kpis" id="kpis-entregas-1"></div>
+        <div class="kpis kpis-6 ent-kpis" id="kpis-entregas-2"></div>
+        <p class="ent-nota" id="ent-nota-filtro"></p>
+
+        <div class="cliente-section-title ent-sec">Análise por</div>
+        <div class="cmp-metric-toggle" id="ent-grupo-toggle" style="padding-top:0;">
+          <button type="button" class="cmp-metric-btn is-active" data-g="regional">Regional</button>
+          <button type="button" class="cmp-metric-btn" data-g="cluster">Cluster</button>
+          <button type="button" class="cmp-metric-btn" data-g="cidade">Cidade</button>
+          <button type="button" class="cmp-metric-btn" data-g="cliente">Cliente</button>
+          <button type="button" class="cmp-metric-btn" data-g="filial">Filial</button>
+        </div>
+        <div class="filters" style="margin-top:10px;">
+          <span class="result-count" id="result-count-ent-grupo"></span>
+          <div class="spacer"></div>
+          <button class="clear-btn copy-btn" id="copy-ent-grupo-btn" type="button">📋 Copiar para Excel</button>
+          <span class="copy-status" id="copy-ent-grupo-status"></span>
+        </div>
+        <div class="table-scroll ent-scroll">
+          <table id="tbl-ent-grupo"><thead id="thead-ent-grupo"></thead><tbody id="tbody-ent-grupo"></tbody></table>
+        </div>
+        <p class="ent-nota" id="ent-nota-grupo"></p>
+
+        <div class="cliente-section-title ent-sec" style="margin-top:16px;">Detalhe dos pedidos</div>
+        <div class="filters">
+          <div class="field"><label for="f-ent-busca">Buscar</label><input type="search" id="f-ent-busca" placeholder="pedido, cliente, código, cidade"></div>
+          <div class="field"><label for="f-ent-vinculo">Vínculo do rastreio</label>
+            <select id="f-ent-vinculo">
+              <option value="">Todos</option>
+              <option value="unico">Único (1 pedido)</option>
+              <option value="grupo">Agrupado (mesmo cliente)</option>
+              <option value="ambiguo">Ambíguo (clientes diferentes)</option>
+              <option value="sem_rastreio">Sem rastreio no gateway</option>
+            </select>
+          </div>
+          <div class="spacer"></div>
+          <span class="result-count" id="result-count-ent-det"></span>
+          <button class="clear-btn copy-btn" id="copy-ent-det-btn" type="button">📋 Copiar para Excel</button>
+          <span class="copy-status" id="copy-ent-det-status"></span>
+        </div>
+        <div class="table-scroll ent-scroll">
+          <table id="tbl-ent-det"><thead id="thead-ent-det"></thead><tbody id="tbody-ent-det"></tbody></table>
+        </div>
+        <div class="empty-state" id="empty-state-entregas" style="display:none;">Nenhum pedido encontrado nos filtros aplicados.</div>
+        <div class="footnote">
+          <b>Fonte:</b> pedidos do Mira com código dos Correios, ligados aos eventos da API dos Correios pelo código de rastreio. Pedidos sem código (outros meios de entrega) não aparecem.<br>
+          <b>Tempos</b> em dias corridos, pela data: <b>pedido → entrega</b> conta cada pedido; <b>postagem → entrega</b> conta cada volume uma vez. Com menos de 5 casos o valor aparece em itálico.<br>
+          <b>No prazo</b> = entregue até a data prevista pelos Correios. <b>Atrasado</b> = ainda não entregue e com a previsão vencida.<br>
+          <b>Ambíguo</b> = o mesmo código está em pedidos de clientes diferentes; fica nos totais, mas fora dos tempos por pedido e da análise por cliente e localidade.<br>
+          Cidade e UF vêm do cadastro do cliente; cluster, do cadastro de clusters; regional, da UF. <b>Tentativas</b>: classificação ainda a confirmar com a Logística.
+        </div>
+      </div>
+    </div>
+    </div>
+
   </div>
 </div>
 
@@ -1998,6 +2108,17 @@
   </div>
 </div>
 
+<div class="modal-overlay is-hidden" id="ent-modal">
+  <div class="modal-card modal-card-wide" role="dialog" aria-modal="true" aria-labelledby="ent-modal-title">
+    <h2 id="ent-modal-title">Pedido</h2>
+    <p class="modal-sub" id="ent-modal-sub"></p>
+    <div id="ent-modal-body"></div>
+    <div class="modal-close-row">
+      <button class="modal-close-btn" id="ent-modal-close" type="button">Fechar</button>
+    </div>
+  </div>
+</div>
+
 <div class="modal-overlay is-hidden" id="copy-fallback-modal">
   <div class="modal-card modal-card-wide" role="dialog" aria-modal="true" aria-labelledby="copy-fallback-title">
     <h2 id="copy-fallback-title">Copiar para Excel</h2>
@@ -2035,7 +2156,7 @@ const RAW_OUTROS_SISTEMAS = __OUTROS_SISTEMAS_JSON__;
 const ABAS_PERMITIDAS = __ABAS_PERMITIDAS_JSON__;
 // Aba inicial = primeira liberada (calculada ja aqui porque o render da aba "Estoque & Ressuprimento"
 // roda antes do initTabs). null = nenhuma aba liberada.
-const ABAS_LOGISTICA = ["estoque", "consolidado", "giro", "giroagrupado", "transferencias", "estoquefilial"];
+const ABAS_LOGISTICA = ["estoque", "consolidado", "giro", "giroagrupado", "transferencias", "estoquefilial", "entregas"];
 const ABA_INICIAL = ABAS_LOGISTICA.find((t) => !Array.isArray(ABAS_PERMITIDAS) || ABAS_PERMITIDAS.includes(t)) || null;
 
 const today = new Date("__TODAY_ISO__T00:00:00");
@@ -2585,6 +2706,7 @@ initFiltrosMobile("abc");
 initFiltrosMobile("excesso");
 initFiltrosMobile("gagabc");
 initFiltrosMobile("transf");
+initFiltrosMobile("entregas");
 
 // Botão "⋯" que recolhe/expande o header-right no celular - mesmo padrão do BI Comercial.
 (function initHeaderMobileToggle() {
@@ -2810,7 +2932,7 @@ initFiltrosMobile("transf");
 })();
 
 (function initTabs() {
-  const tabs = ["estoque", "consolidado", "giro", "giroagrupado", "transferencias", "estoquefilial"];
+  const tabs = ["estoque", "consolidado", "giro", "giroagrupado", "transferencias", "estoquefilial", "entregas"];
   const btns = {};
   const contents = {};
   for (const t of tabs) {
@@ -2829,6 +2951,7 @@ initFiltrosMobile("transf");
     if (tab === "giroagrupado" && window.renderGiroAgrupado) window.renderGiroAgrupado();
     if (tab === "transferencias" && window.renderTransferencias) window.renderTransferencias();
     if (tab === "estoquefilial" && window.renderEstoqueFilial) window.renderEstoqueFilial();
+    if (tab === "entregas" && window.renderEntregas) window.renderEntregas();
 
     // log de acessos por aba (fase 2) - so na versao hospedada, fire-and-forget.
     if (HOSTED_SESSION) {
@@ -3766,6 +3889,313 @@ initFiltrosMobile("transf");
   });
 
   window.renderEstoqueFilial = render;
+})();
+
+// ================================================================
+// ABA "ENTREGAS & PRAZOS" (2026-10-20) - pedidos do Mira enviados pelos Correios x eventos da API dos Correios.
+// Dados em GET /api/entregas (backend: filtrado por empresa e pela permissao da aba; local_server: sem filtro),
+// buscados so na 1a abertura. Metricas POR PEDIDO (pedido -> entrega) e POR OBJETO (postagem -> entrega, prazo,
+// pendentes, devolvidos: cada objeto conta uma vez mesmo atendendo varios pedidos). Codigo compartilhado entre
+// clientes diferentes ("ambiguo") nao e atribuido a ninguem: fica fora dos tempos por pedido e de todo recorte por
+// cliente/localidade. Sem barra invertida neste bloco.
+// ================================================================
+(function initEntregasTab() {
+  const el = id => document.getElementById(id);
+  let D = null, R = [], F = [], carregando = false;
+  const MIN_N = 5;                 // abaixo disso mediana/media/percentual aparecem em italico (amostra pequena)
+  const HORAS_DESATUALIZADO = 3;   // extracao do rastreio mais velha que isso = aviso de desatualizado
+  const st = { mes: "", fil: "", reg: "", uf: "", clu: "", cid: "", sit: "", grupo: "regional", q: "", vinc: "", sortG: ["acomp", -1], sortD: ["dp", -1] };
+  const esc = s => String(s == null ? "" : s).split("&").join("&amp;").split("<").join("&lt;").split(">").join("&gt;").split('"').join("&quot;");
+  const DT = v => v ? String(v).slice(0, 10).split("-").reverse().join("/") : "—";
+  const DTH = v => v ? DT(v) + " " + String(v).slice(11, 16) : "—";
+  const NUM = v => (v || 0).toLocaleString("pt-BR");
+  const PCT = (a, b) => b ? (Math.round(1000 * a / b) / 10).toLocaleString("pt-BR") + "%" : "—";
+  const MESES = ["jan", "fev", "mar", "abr", "mai", "jun", "jul", "ago", "set", "out", "nov", "dez"];
+  const rotMes = m => MESES[+m.slice(5, 7) - 1] + "/" + m.slice(2, 4);
+  const media = a => a.length ? a.reduce((s, v) => s + v, 0) / a.length : null;
+  const mediana = a => { if (!a.length) return null; const s = a.slice().sort((x, y) => x - y), n = s.length; return n % 2 ? s[(n - 1) / 2] : (s[n / 2 - 1] + s[n / 2]) / 2; };
+  const r1 = v => v == null ? null : Math.round(v * 10) / 10;
+  const fmtD = v => v == null ? "—" : r1(v).toLocaleString("pt-BR") + " d";
+  const fmtP = v => v == null ? "—" : (Math.round(v * 1000) / 10).toLocaleString("pt-BR") + "%";
+  const pouco = (txt, n) => n < MIN_N && txt !== "—" ? '<span class="ent-pouco" title="amostra pequena (' + n + ')">' + txt + "</span>" : txt;
+  // cor por familia: verde = entregue, azul = em andamento, amarelo = pede atencao, vermelho = problema, cinza = sem dado
+  const SIT_CHIP = { "Entregue": "c-ok", "Em trânsito": "c-info", "Saiu para entrega": "c-info", "Aguardando retirada": "c-warning", "Problema na entrega": "c-danger", "Etiqueta emitida, não postado": "c-warning", "Devolvido ao remetente": "c-danger", "Etiqueta expirada": "c-danger", "Sem eventos": "c-neutral", "Sem rastreio no gateway": "c-neutral" };
+  // rotulo curto so na tabela (o nome completo fica no title e nos filtros/cartoes)
+  const SIT_CURTO = { "Aguardando retirada": "Aguard. retirada", "Problema na entrega": "Problema", "Etiqueta emitida, não postado": "Não postado", "Devolvido ao remetente": "Devolvido", "Sem rastreio no gateway": "Sem rastreio" };
+  const PRAZO_CHIP = { "No prazo": "c-ok", "Com atraso": "c-warning", "Em aberto, no prazo": "c-info", "Em aberto, atrasado": "c-danger", "Sem previsão": "c-neutral" };
+  const PRAZO_CURTO = { "Em aberto, no prazo": "Aberto, no prazo", "Em aberto, atrasado": "Aberto, atrasado" };
+  const VINC_CHIP = { unico: "", grupo: "c-neutral", ambiguo: "c-danger", sem_rastreio: "c-neutral" };
+  const chip = (cls, txt, curto) => !txt || txt === "—" ? "—" : (cls ? '<span class="chip ' + cls + '" title="' + esc(txt) + '">' + esc(curto || txt) + "</span>" : esc(txt));
+  const rotVinc = r => r.v === "grupo" ? "agrupado (" + r.np + " pedidos)" : r.v === "ambiguo" ? "ambíguo (" + r.np + " pedidos)" : r.v === "sem_rastreio" ? "sem rastreio" : "único";
+  const cidUf = r => r.cid ? r.cid + "-" + r.uf : "";
+  const uniq = a => [...new Set(a.filter(Boolean))].sort((x, y) => String(x).localeCompare(String(y), "pt-BR"));
+
+  // ---- carga (uma vez)
+  function msg(t) { el("ent-msg").textContent = t; el("ent-msg").classList.remove("is-hidden"); el("ent-corpo").classList.add("is-hidden"); }
+  function carregar() {
+    if (D || carregando) return;
+    carregando = true;
+    fetch("/api/entregas", { credentials: "same-origin", cache: "no-store" })
+      .then(r => r.json())
+      .then(j => {
+        carregando = false;
+        if (!j || !j.ok) { msg(j && j.motivo === "aba_nao_liberada" ? "Esta aba não está liberada para o seu usuário." : "Os dados de entregas ainda não foram sincronizados. Tente de novo depois do próximo ciclo de atualização."); return; }
+        D = j;
+        preparar();
+        montarFiltros();
+        el("ent-msg").classList.add("is-hidden");
+        el("ent-corpo").classList.remove("is-hidden");
+        render();
+      })
+      .catch(() => { carregando = false; msg("Não foi possível carregar as entregas. Recarregue a página (no link público, sem login, esta aba não tem dados)."); });
+  }
+  function preparar() {
+    R = D.pedidos.map(r => {
+      const o = D.objetos[r.cod] || null;
+      return Object.assign({}, r, { obj: o, filial: empresaAbrev(D.empresas[r.e] || r.e), sit: o ? o.sit : "Sem rastreio no gateway", prazo: o ? o.prazo : "—" });
+    });
+    el("ent-inicio").textContent = DT(D.meta.inicio);
+    const m = D.meta, partes = [];
+    const ext = Date.parse(m.extraidoEm), horas = (Date.now() - ext) / 3600000;
+    if (isNaN(ext)) partes.push('<span class="is-stale">Data da extração do rastreio desconhecida</span>');
+    else if (horas > HORAS_DESATUALIZADO) partes.push('<span class="is-stale">Desatualizado: o último resultado válido é de <b>' + DTH(m.extraidoEm) + "</b> (há " + Math.round(horas) + " h) — a extração do rastreio não rodou depois disso</span>");
+    else partes.push("<span>Extração do BI: <b>" + DTH(m.extraidoEm) + "</b></span>");
+    // a extracao do BI pode estar em dia e o banco dos Correios parado: a sincronizacao do gateway (ultimo lote de
+    // rastreio) e mostrada a parte, com aviso quando passa de 24 h - um evento novo isolado nao torna os dados "atuais"
+    const sinc = Date.parse(m.gatewayUltimoJob);
+    if (isNaN(sinc)) partes.push('<span class="is-stale">Última sincronização do banco dos Correios: desconhecida</span>');
+    else if ((Date.now() - sinc) / 3600000 > 24) partes.push('<span class="is-stale">Banco dos Correios sem sincronização desde <b>' + DTH(m.gatewayUltimoJob) + "</b>: situações de objetos em andamento podem estar desatualizadas</span>");
+    else partes.push("<span>Última sincronização do banco dos Correios: <b>" + DTH(m.gatewayUltimoJob) + "</b></span>");
+    partes.push("<span>Último evento recebido dos Correios: <b>" + DTH(m.gatewayUltimoEvento) + "</b></span>");
+    partes.push("<span>Situações e atrasos calculados em <b>" + DT(m.hoje) + "</b></span>");
+    el("ent-status").innerHTML = partes.join("");
+  }
+
+  // ---- filtros (localidade em cascata: regional -> UF -> cluster -> cidade; ambiguos nunca entram)
+  function opts(sel, vals, rotTodos, rot) {
+    const atual = sel.value;
+    sel.innerHTML = '<option value="">' + rotTodos + "</option>" + vals.map(v => '<option value="' + esc(v) + '">' + esc(rot ? rot(v) : v) + "</option>").join("");
+    sel.value = vals.includes(atual) ? atual : "";
+  }
+  function montarLocais() {
+    const base = R.filter(r => r.v !== "ambiguo");
+    opts(el("f-ent-regional"), uniq(base.map(r => r.reg)), "Todas as regionais");
+    const b1 = base.filter(r => !st.reg || r.reg === st.reg);
+    opts(el("f-ent-uf"), uniq(b1.map(r => r.uf)), "Todas as UFs");
+    st.uf = el("f-ent-uf").value;
+    const b2 = b1.filter(r => !st.uf || r.uf === st.uf);
+    opts(el("f-ent-cluster"), uniq(b2.map(r => r.clu)), "Todos os clusters");
+    st.clu = el("f-ent-cluster").value;
+    const b3 = b2.filter(r => !st.clu || r.clu === st.clu);
+    opts(el("f-ent-cidade"), uniq(b3.map(cidUf)), "Todas as cidades");
+    st.cid = el("f-ent-cidade").value;
+  }
+  function montarFiltros() {
+    opts(el("f-ent-mes"), uniq(R.map(r => r.mes)).reverse(), "Todos os meses", rotMes);
+    const fils = uniq(R.map(r => r.e)).sort((a, b) => empresaAbrev(D.empresas[a] || a).localeCompare(empresaAbrev(D.empresas[b] || b), "pt-BR"));
+    opts(el("f-ent-filial"), fils, "Todas as filiais", e => empresaAbrev(D.empresas[e] || e));
+    opts(el("f-ent-situacao"), D.meta.situacoes.filter(s => R.some(r => r.sit === s)), "Todas as situações");
+    montarLocais();
+    const liga = (id, k, cascata) => el(id).addEventListener("change", e => { st[k] = e.target.value; if (cascata) montarLocais(); render(); });
+    liga("f-ent-mes", "mes"); liga("f-ent-filial", "fil"); liga("f-ent-situacao", "sit");
+    liga("f-ent-regional", "reg", true); liga("f-ent-uf", "uf", true); liga("f-ent-cluster", "clu", true); liga("f-ent-cidade", "cid");
+    el("f-ent-vinculo").addEventListener("change", e => { st.vinc = e.target.value; tabelaDet(); });
+    el("f-ent-busca").addEventListener("input", e => { st.q = e.target.value; tabelaDet(); });
+    el("clear-filters-entregas").addEventListener("click", () => {
+      Object.assign(st, { mes: "", fil: "", reg: "", uf: "", clu: "", cid: "", sit: "", q: "", vinc: "" });
+      ["f-ent-mes", "f-ent-filial", "f-ent-regional", "f-ent-situacao", "f-ent-vinculo"].forEach(i => { el(i).value = ""; });
+      el("f-ent-busca").value = "";
+      montarLocais(); render();
+    });
+    document.querySelectorAll("#ent-grupo-toggle .cmp-metric-btn").forEach(b => b.addEventListener("click", () => {
+      document.querySelectorAll("#ent-grupo-toggle .cmp-metric-btn").forEach(x => x.classList.toggle("is-active", x === b));
+      st.grupo = b.dataset.g; tabelaGrupo();
+    }));
+    el("copy-ent-grupo-btn").addEventListener("click", copiarGrupo);
+    el("copy-ent-det-btn").addEventListener("click", copiarDet);
+  }
+  const temLocal = () => !!(st.reg || st.uf || st.clu || st.cid);
+  function recorte() {
+    const loc = temLocal();
+    return R.filter(r => (!st.mes || r.mes === st.mes) && (!st.fil || r.e === st.fil) && (!st.sit || r.sit === st.sit)
+      && (!loc || (r.v !== "ambiguo" && (!st.reg || r.reg === st.reg) && (!st.uf || r.uf === st.uf) && (!st.clu || r.clu === st.clu) && (!st.cid || cidUf(r) === st.cid))));
+  }
+
+  // ---- metricas: por PEDIDO e por OBJETO (objeto deduplicado pelo codigo dentro do recorte)
+  function metricas(rows) {
+    const acomp = rows.filter(r => r.obj);
+    const objs = new Map(); for (const r of acomp) objs.set(r.cod, r.obj);
+    const O = [...objs.values()];
+    const entP = acomp.filter(r => r.obj.sit === "Entregue");
+    const entO = O.filter(o => o.sit === "Entregue");
+    const comPrev = entO.filter(o => o.prazo === "No prazo" || o.prazo === "Com atraso");
+    const pend = O.filter(o => D.meta.pendentes.includes(o.sit));
+    return {
+      pedidos: rows.length, acomp: acomp.length, objetos: O.length, entP: entP.length, entO: entO.length,
+      tPE: entP.filter(r => r.v !== "ambiguo" && r.dPE != null).map(r => r.dPE),      // pedido -> entrega (sem ambiguos/inconsistentes)
+      tPost: entO.filter(o => o.dPo != null).map(o => o.dPo),                          // postagem -> entrega, por objeto
+      comPrev: comPrev.length, noPrazo: comPrev.filter(o => o.prazo === "No prazo").length,
+      pend: pend.length, atras: pend.filter(o => o.prazo === "Em aberto, atrasado").length,
+      dev: O.filter(o => o.sit === "Devolvido ao remetente").length, tent: O.filter(o => o.tent > 0).length,
+      amb: rows.filter(r => r.v === "ambiguo").length, sem: rows.filter(r => r.v === "sem_rastreio").length,
+    };
+  }
+  function card(lbl, num, sub, cls) {
+    return '<div class="kpi kpi-static' + (cls ? " " + cls : "") + '"><div class="num">' + num + '</div><div class="lbl">' + esc(lbl) + '</div><div class="sub">' + sub + "</div></div>";
+  }
+  function tempo(a, unid) {
+    const md = mediana(a);
+    if (md == null) return { num: "—", sub: "sem entregas no recorte" };
+    return { num: pouco(fmtD(md), a.length), sub: "mediana · média " + fmtD(media(a)) + " · " + NUM(a.length) + " " + unid + (a.length < MIN_N ? " (amostra pequena)" : "") };
+  }
+  function kpis(M) {
+    const cobF = D.cobertura.filter(c => (!st.mes || c.mes === st.mes) && (!st.fil || c.e === st.fil));
+    const fora = cobF.reduce((s, c) => s + c.foraPadrao, 0);
+    const tPE = tempo(M.tPE, "pedidos"), tPo = tempo(M.tPost, "objetos");
+    el("kpis-entregas-1").innerHTML = [
+      card("Pedidos acompanhados", NUM(M.acomp), "de " + NUM(M.pedidos) + " pedidos com código dos Correios (" + PCT(M.acomp, M.pedidos) + ")"),
+      card("Objetos acompanhados", NUM(M.objetos), "volumes dos Correios desses pedidos · um objeto pode atender mais de um pedido"),
+      card("Pedidos entregues", PCT(M.entP, M.acomp), NUM(M.entP) + " de " + NUM(M.acomp) + " pedidos acompanhados · objetos: " + NUM(M.entO) + " de " + NUM(M.objetos), "k-ok"),
+      card("Pedido → entrega", tPE.num, tPE.sub),
+      card("Postagem → entrega", tPo.num, tPo.sub),
+      card("Entregues no prazo", pouco(PCT(M.noPrazo, M.comPrev), M.comPrev), NUM(M.noPrazo) + " de " + NUM(M.comPrev) + " objetos entregues com previsão dos Correios"),
+    ].join("");
+    el("kpis-entregas-2").innerHTML = [
+      card("Pendentes", NUM(M.pend), "objetos ainda não entregues: em trânsito, saiu para entrega, aguardando retirada, problema ou não postado", M.pend ? "k-warning" : ""),
+      card("Atrasados em aberto", NUM(M.atras), "pendentes com a previsão dos Correios já vencida", M.atras ? "k-danger" : ""),
+      card("Devolvidos", NUM(M.dev), "objetos devolvidos ao remetente", M.dev ? "k-danger" : ""),
+      card("Com tentativa sem sucesso", NUM(M.tent), "objetos com baixa sem entrega antes da entrega ou devolução", "k-confirmar"),
+      card("Rastreio ambíguo", NUM(M.amb), "pedidos com código usado por clientes diferentes · fora dos tempos por pedido e dos recortes", M.amb ? "k-warning" : ""),
+      card("Sem rastreio no gateway", NUM(M.sem), "pedidos com código válido que o banco dos Correios não acompanha" + (fora ? " · mais " + NUM(fora) + " com código fora do padrão" : "")),
+    ].join("");
+    const notas = [];
+    if (temLocal()) {
+      const ambFora = R.filter(r => r.v === "ambiguo" && (!st.mes || r.mes === st.mes) && (!st.fil || r.e === st.fil) && (!st.sit || r.sit === st.sit)).length;
+      if (ambFora) notas.push(NUM(ambFora) + " pedido(s) com rastreio ambíguo ficam fora deste recorte por localidade.");
+    }
+    if (temLocal() || st.sit) notas.push("O total de pedidos com código fora do padrão considera só mês e filial.");
+    el("ent-nota-filtro").textContent = notas.join(" ");
+  }
+
+  // ---- analise por regional / cluster / cidade / cliente / filial (sem os ambiguos)
+  const GRUPOS = {
+    regional: { tit: "Regional", k: r => r.reg || "(sem regional)" },
+    cluster: { tit: "Cluster", k: r => r.clu || "(sem cluster)" },
+    cidade: { tit: "Cidade", k: r => cidUf(r) || "(sem cidade no cadastro)" },
+    cliente: { tit: "Cliente", k: r => r.e + "|" + r.c, rot: r => (r.n || "Cliente " + r.c) + " · " + r.filial + (cidUf(r) ? " · " + cidUf(r) : "") },
+    filial: { tit: "Filial", k: r => r.filial },
+  };
+  const COLS_G = [["grupo", "", "t"], ["acomp", "Pedidos<br>acompanhados", "n"], ["entP", "Pedidos<br>entregues", "n"], ["pctEnt", "%<br>entregue", "p", "acomp"],
+    ["mdPE", "Pedido → entrega<br>mediana", "d", "nPE"], ["miPE", "Pedido → entrega<br>média", "d", "nPE"], ["mdPo", "Postagem → entrega<br>mediana", "d", "nPo"], ["miPo", "Postagem → entrega<br>média", "d", "nPo"],
+    ["pctPrazo", "No prazo<br>(objetos)", "p", "nPrazo"], ["objetos", "Objetos", "n"], ["pend", "Pendentes", "n"], ["atras", "Atrasados", "n"], ["dev", "Devolvidos", "n"]];
+  function linhaGrupo(nome, rs) {
+    const M = metricas(rs);
+    return { grupo: nome, acomp: M.acomp, entP: M.entP, pctEnt: M.acomp ? M.entP / M.acomp : null, mdPE: mediana(M.tPE), miPE: media(M.tPE), nPE: M.tPE.length,
+      mdPo: mediana(M.tPost), miPo: media(M.tPost), nPo: M.tPost.length, pctPrazo: M.comPrev ? M.noPrazo / M.comPrev : null, nPrazo: M.comPrev,
+      objetos: M.objetos, pend: M.pend, atras: M.atras, dev: M.dev };
+  }
+  function linhasGrupo() {
+    const g = GRUPOS[st.grupo], m = new Map();
+    for (const r of F) { if (r.v === "ambiguo" || !r.obj) continue; const k = g.k(r); (m.get(k) || m.set(k, { rot: g.rot ? g.rot(r) : k, rs: [] }).get(k)).rs.push(r); }
+    const linhas = [...m.values()].map(x => linhaGrupo(x.rot, x.rs));
+    const [sk, sd] = st.sortG;
+    linhas.sort((a, b) => { const x = a[sk], y = b[sk]; if (x == null && y == null) return 0; if (x == null) return 1; if (y == null) return -1; return (typeof x === "string" ? x.localeCompare(y, "pt-BR") : x - y) * sd; });
+    return { linhas, total: linhaGrupo("Total (sem ambíguos)", F.filter(r => r.v !== "ambiguo" && r.obj)) };
+  }
+  const celG = (c, l) => c[2] === "t" ? esc(l[c[0]]) : c[2] === "n" ? NUM(l[c[0]]) : c[2] === "p" ? pouco(fmtP(l[c[0]]), l[c[3]]) : pouco(fmtD(l[c[0]]), l[c[3]]);
+  function tabelaGrupo() {
+    const { linhas, total } = linhasGrupo();
+    const [sk, sd] = st.sortG;
+    el("thead-ent-grupo").innerHTML = "<tr>" + COLS_G.map((c, i) => '<th data-k="' + c[0] + '"' + (i ? ' class="num-cell"' : "") + "><button>" + (i ? c[1] : GRUPOS[st.grupo].tit) + ' <span class="sort-arrow">' + (sk === c[0] ? (sd < 0 ? "▼" : "▲") : "") + "</span></button></th>").join("") + "</tr>";
+    el("thead-ent-grupo").querySelectorAll("th").forEach(h => h.onclick = () => { const k = h.dataset.k; st.sortG = [k, st.sortG[0] === k ? -st.sortG[1] : (k === "grupo" ? 1 : -1)]; tabelaGrupo(); });
+    const tr = (l, cls) => '<tr' + (cls ? ' class="' + cls + '"' : "") + ">" + COLS_G.map((c, i) => "<td" + (i ? ' class="num-cell"' : ' class="ent-nome" title="' + esc(l.grupo) + '"') + ">" + celG(c, l) + "</td>").join("") + "</tr>";
+    el("tbody-ent-grupo").innerHTML = linhas.length ? linhas.map(l => tr(l)).join("") + tr(total, "ent-total") : '<tr><td colspan="' + COLS_G.length + '"><div class="empty-state">Sem pedidos acompanhados no recorte.</div></td></tr>';
+    el("result-count-ent-grupo").textContent = NUM(linhas.length) + " " + GRUPOS[st.grupo].tit.toLowerCase() + (linhas.length === 1 ? "" : "s");
+    const amb = F.filter(r => r.v === "ambiguo").length;
+    el("ent-nota-grupo").textContent = "Só pedidos acompanhados pelos Correios" + (amb ? "; " + NUM(amb) + " pedido(s) com rastreio ambíguo ficam fora desta tabela" : "") + ". Objetos, prazo, pendentes e devolvidos contam cada objeto uma vez.";
+  }
+  function copiarGrupo() {
+    const { linhas, total } = linhasGrupo();
+    const num = (v, d) => v == null ? "" : (Math.round(v * Math.pow(10, d)) / Math.pow(10, d)).toLocaleString("pt-BR");
+    const headers = [GRUPOS[st.grupo].tit, "Pedidos acompanhados", "Pedidos entregues", "% entregue", "Pedido→entrega mediana (d)", "Pedido→entrega média (d)", "Pedidos com tempo",
+      "Postagem→entrega mediana (d)", "Postagem→entrega média (d)", "Objetos com tempo", "% no prazo (objetos)", "Objetos com previsão", "Objetos", "Pendentes", "Atrasados", "Devolvidos"];
+    const rows = [...linhas, total].map(l => [l.grupo, l.acomp, l.entP, num(l.pctEnt == null ? null : 100 * l.pctEnt, 1), num(l.mdPE, 1), num(l.miPE, 1), l.nPE,
+      num(l.mdPo, 1), num(l.miPo, 1), l.nPo, num(l.pctPrazo == null ? null : 100 * l.pctPrazo, 1), l.nPrazo, l.objetos, l.pend, l.atras, l.dev]);
+    copyToExcel(headers, rows, el("copy-ent-grupo-status"));
+  }
+
+  // ---- detalhe dos pedidos
+  const COLS_D = [["filial", "Filial", "t"], ["p", "Pedido", "t"], ["dp", "Data do<br>pedido", "d"], ["n", "Cliente", "nm"], ["cidUf", "Cidade", "t"], ["clu", "Cluster", "t"], ["reg", "Regional", "t"],
+    ["cod", "Código de<br>rastreio", "t"], ["v", "Vínculo", "v"], ["sit", "Situação", "sit"], ["po", "Postado", "d"], ["en", "Entregue", "d"], ["prev", "Previsão", "d"], ["prazo", "Prazo", "prazo"],
+    ["dPE", "Pedido →<br>entrega (d)", "n"], ["dPo", "Postagem →<br>entrega (d)", "n"], ["tent", "Tentativas<br>(a confirmar)", "n"]];
+  const valD = (r, k) => k === "cidUf" ? cidUf(r) : k === "po" ? (r.obj ? r.obj.po : "") : k === "en" ? (r.obj ? r.obj.en : "") : k === "prev" ? (r.obj ? r.obj.prev : "")
+    : k === "dPo" ? (r.obj ? r.obj.dPo : null) : k === "tent" ? (r.obj ? r.obj.tent : null) : k === "dPE" ? (r.v === "ambiguo" ? null : r.dPE) : r[k];
+  function linhasDet() {
+    const q = st.q.trim().toLowerCase();
+    const rs = F.filter(r => (!st.vinc || r.v === st.vinc) && (!q || [r.p, r.n, r.cod, r.cid, r.filial, r.clu].some(v => String(v || "").toLowerCase().includes(q))));
+    const [sk, sd] = st.sortD;
+    return rs.sort((a, b) => { const x = valD(a, sk), y = valD(b, sk); if ((x == null || x === "") && (y == null || y === "")) return 0; if (x == null || x === "") return 1; if (y == null || y === "") return -1; return (typeof x === "number" ? x - y : String(x).localeCompare(String(y), "pt-BR")) * sd; });
+  }
+  function celD(c, r) {
+    const v = valD(r, c[0]);
+    switch (c[2]) {
+      case "d": return DT(v);
+      case "n": return v == null ? "—" : NUM(v);
+      case "sit": return chip(SIT_CHIP[v] || "c-neutral", v, SIT_CURTO[v]);
+      case "prazo": return chip(PRAZO_CHIP[v] || "", v, PRAZO_CURTO[v]);
+      case "v": return chip(VINC_CHIP[r.v], rotVinc(r));
+      default: return esc(v || "—");
+    }
+  }
+  function tabelaDet() {
+    const rs = linhasDet();
+    const [sk, sd] = st.sortD;
+    el("thead-ent-det").innerHTML = "<tr>" + COLS_D.map(c => '<th data-k="' + c[0] + '"' + (c[2] === "n" ? ' class="num-cell"' : "") + "><button>" + c[1] + ' <span class="sort-arrow">' + (sk === c[0] ? (sd < 0 ? "▼" : "▲") : "") + "</span></button></th>").join("") + "</tr>";
+    el("thead-ent-det").querySelectorAll("th").forEach(h => h.onclick = () => { const k = h.dataset.k; st.sortD = [k, st.sortD[0] === k ? -st.sortD[1] : 1]; tabelaDet(); });
+    el("tbody-ent-det").innerHTML = rs.map((r, i) => '<tr data-i="' + i + '"' + (r.v === "ambiguo" || r.inc ? ' class="row-warning"' : "") + ">" + COLS_D.map(c => "<td" + (c[2] === "n" ? ' class="num-cell"' : c[2] === "nm" ? ' class="ent-nome" title="' + esc(r.n) + '"' : "") + ">" + celD(c, r) + "</td>").join("") + "</tr>").join("");
+    el("tbody-ent-det").querySelectorAll("tr").forEach(tr => tr.onclick = () => abrir(rs[+tr.dataset.i]));
+    el("empty-state-entregas").style.display = rs.length ? "none" : "";
+    el("result-count-ent-det").textContent = NUM(rs.length) + " pedido" + (rs.length === 1 ? "" : "s");
+  }
+  function copiarDet() {
+    const rs = linhasDet();
+    const headers = ["Filial", "Pedido", "Data do pedido", "Cliente", "Cidade", "UF", "Cluster", "Regional", "Código de rastreio", "Vínculo", "Situação", "Etiqueta", "Postado", "Entregue", "Previsão", "Prazo", "Pedido→entrega (d)", "Postagem→entrega (d)", "Tentativas (a confirmar)"];
+    const rows = rs.map(r => [r.filial, r.p, DT(r.dp), r.n, r.cid, r.uf, r.clu, r.reg, r.cod, rotVinc(r), r.sit, r.obj ? DTH(r.obj.et) : "", r.obj ? DTH(r.obj.po) : "", r.obj ? DTH(r.obj.en) : "", r.obj ? DT(r.obj.prev) : "",
+      r.prazo, valD(r, "dPE") == null ? "" : valD(r, "dPE"), valD(r, "dPo") == null ? "" : valD(r, "dPo"), valD(r, "tent") == null ? "" : valD(r, "tent")]);
+    copyToExcel(headers, rows.map(l => l.map(v => v === "—" ? "" : v)), el("copy-ent-det-status"));
+  }
+
+  // ---- detalhe de um pedido (eventos do objeto)
+  const kv = (k, v) => "<dt>" + esc(k) + "</dt><dd>" + esc(v) + "</dd>";
+  function abrir(r) {
+    if (!r) return;
+    const o = r.obj;
+    el("ent-modal-title").textContent = "Pedido " + r.p + " · " + r.filial;
+    el("ent-modal-sub").textContent = (r.n || "") + (cidUf(r) ? " · " + cidUf(r) : "") + (r.clu ? " · " + r.clu : "");
+    let h = '<dl class="ent-kv">' + kv("Data do pedido", DT(r.dp)) + kv("Código de rastreio", r.cod) + kv("Vínculo", rotVinc(r) + (r.v === "ambiguo" ? " · não atribuído a nenhum cliente nas análises" : "")) + kv("Situação", r.sit);
+    if (o) h += kv("Etiqueta emitida", DTH(o.et)) + kv("Postado", DTH(o.po)) + kv("Entregue", DTH(o.en)) + kv("Previsão dos Correios", DT(o.prev)) + kv("Prazo", o.prazo)
+      + kv("Pedido → entrega", valD(r, "dPE") == null ? "—" : valD(r, "dPE") + " d") + kv("Postagem → entrega", o.dPo == null ? "—" : o.dPo + " d") + kv("Tentativas sem sucesso", o.tent + " (classificação a confirmar com a Logística)");
+    if (r.inc) h += kv("Atenção", "postagem ou entrega anterior à data do pedido: fica fora dos tempos");
+    h += "</dl>";
+    if (o && o.ev.length) h += '<div class="table-scroll"><table><thead><tr><th>Data/hora</th><th>Evento</th><th>Descrição</th><th>Local</th></tr></thead><tbody>' + o.ev.map(e => "<tr><td>" + DTH(e.em) + "</td><td>" + esc(e.c) + "</td><td>" + esc(e.d) + "</td><td>" + esc(e.l) + "</td></tr>").join("") + "</tbody></table></div>";
+    else h += '<p class="modal-sub">' + (o ? "Os Correios ainda não registraram eventos para este objeto." : "Este código não está no banco dos Correios (fora da cobertura atual).") + "</p>";
+    el("ent-modal-body").innerHTML = h;
+    el("ent-modal").classList.remove("is-hidden");
+    el("ent-modal-close").focus();
+  }
+  const fechar = () => el("ent-modal").classList.add("is-hidden");
+  el("ent-modal-close").addEventListener("click", fechar);
+  el("ent-modal").addEventListener("click", e => { if (e.target === el("ent-modal")) fechar(); });
+  document.addEventListener("keydown", e => { if (e.key === "Escape" && !el("ent-modal").classList.contains("is-hidden")) fechar(); });
+
+  function render() {
+    if (!D) { carregar(); return; }
+    F = recorte();
+    kpis(metricas(F));
+    tabelaGrupo();
+    tabelaDet();
+  }
+  window.renderEntregas = render;
 })();
 
 // permissao por aba: "Estoque & Ressuprimento" nao liberada -> abre na primeira aba liberada

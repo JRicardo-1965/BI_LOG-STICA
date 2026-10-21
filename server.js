@@ -58,6 +58,18 @@ if (fs.existsSync(DATA_FILE)) {
   }
 }
 
+// Aba "Entregas & Prazos": tem nome de cliente e código de rastreio - chega por POST /api/sync-entregas (separado
+// do sync principal) e sai filtrada por empresa em GET /api/entregas; nunca vai embutida no HTML.
+const ENTREGAS_FILE = path.join(__dirname, 'data', 'entregas.json');
+let latestEntregas = null;
+if (fs.existsSync(ENTREGAS_FILE)) {
+  try {
+    latestEntregas = JSON.parse(fs.readFileSync(ENTREGAS_FILE, 'utf8'));
+  } catch (err) {
+    console.error('Não consegui ler data/entregas.json existente, começando sem entregas:', err.message);
+  }
+}
+
 const app = express();
 app.disable('x-powered-by');
 // trust proxy: o Render fica atras de um proxy reverso - sem isso req.ip devolve o IP interno
@@ -210,7 +222,7 @@ function requireAuth(req, res, next) {
 // O Portal manda no token do /sso a lista de abas do usuario neste BI SO quando ha restricao
 // (USUARIOS_SIS_BI_ABAS); sem o campo = todas. A lista fica no cookie de sessao (assinado) e vale ate o
 // proximo login pelo Portal. Aba nao liberada: some da tela E o servidor nao manda os dados dela.
-const ABAS_LOGISTICA = ['estoque', 'consolidado', 'giro', 'giroagrupado', 'transferencias', 'estoquefilial'];
+const ABAS_LOGISTICA = ['estoque', 'consolidado', 'giro', 'giroagrupado', 'transferencias', 'estoquefilial', 'entregas'];
 function abasValidas(abas) {
   if (!Array.isArray(abas)) return null;
   // lado seguro: lista que so tem abas desconhecidas vira "nenhuma aba", nunca "todas"
@@ -308,6 +320,41 @@ app.post('/api/sync', express.json({ limit: '25mb' }), async (req, res) => {
     console.error('Erro processando /api/sync:', err);
     res.status(500).json({ ok: false, error: 'Erro ao processar sincronização.' });
   }
+});
+
+// --- Entregas & Prazos (pedidos do Mira x eventos dos Correios, gerado por cruza_entregas.js) ---------------
+app.post('/api/sync-entregas', express.json({ limit: '25mb' }), (req, res) => {
+  const secret = req.header('X-Sync-Secret');
+  if (!secret || secret !== SYNC_SECRET) return res.status(403).json({ ok: false, error: 'Segredo de sincronização inválido.' });
+  const body = req.body || {};
+  if (!Array.isArray(body.pedidos) || !Array.isArray(body.cobertura) || !body.objetos || typeof body.objetos !== 'object') {
+    return res.status(400).json({ ok: false, error: 'Dados de entregas inválidos.' });
+  }
+  try {
+    latestEntregas = { meta: body.meta || {}, empresas: body.empresas || {}, pedidos: body.pedidos, objetos: body.objetos, cobertura: body.cobertura, syncedAt: new Date().toISOString() };
+    fs.mkdirSync(path.dirname(ENTREGAS_FILE), { recursive: true });
+    fs.writeFileSync(ENTREGAS_FILE, JSON.stringify(latestEntregas));
+    res.json({ ok: true, syncedAt: latestEntregas.syncedAt, pedidos: body.pedidos.length, objetos: Object.keys(body.objetos).length });
+  } catch (err) {
+    console.error('Erro processando /api/sync-entregas:', err);
+    res.status(500).json({ ok: false, error: 'Erro ao processar sincronização das entregas.' });
+  }
+});
+
+// Escopo: pedido e cobertura pela empresa do pedido (e); objeto so se algum pedido visivel usa o codigo dele (um
+// objeto compartilhado com pedido de empresa nao liberada continua visivel so pelo pedido liberado).
+app.get('/api/entregas', requireAuth, (req, res) => {
+  res.set('Cache-Control', 'no-store');
+  if (!abaLiberada(req.abas, 'entregas')) return res.status(403).json({ ok: false, motivo: 'aba_nao_liberada' });
+  if (!latestEntregas) return res.json({ ok: false, motivo: 'sem_dados' });
+  const allowed = empresasDoUsuario(req.userEmail);
+  const pode = (e) => allowed.includes(String(e));
+  const pedidos = latestEntregas.pedidos.filter((p) => pode(p.e));
+  const objetos = {};
+  for (const p of pedidos) if (latestEntregas.objetos[p.cod]) objetos[p.cod] = latestEntregas.objetos[p.cod];
+  const empresas = {};
+  for (const p of pedidos) empresas[p.e] = latestEntregas.empresas[p.e];
+  res.json({ ok: true, meta: latestEntregas.meta, empresas, pedidos, objetos, cobertura: latestEntregas.cobertura.filter((c) => pode(c.e)) });
 });
 
 // --- log de acessos por aba (fase 2) ------------------------------------------
