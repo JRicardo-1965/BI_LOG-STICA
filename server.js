@@ -351,7 +351,9 @@ app.get('/api/entregas', requireAuth, (req, res) => {
   const pode = (e) => allowed.includes(String(e));
   const pedidos = latestEntregas.pedidos.filter((p) => pode(p.e));
   const objetos = {};
-  for (const p of pedidos) if (latestEntregas.objetos[p.cod]) objetos[p.cod] = latestEntregas.objetos[p.cod];
+  // pedido "codigo_errado": o pacote com esse codigo e de OUTRO pedido (referencia dos Correios), as vezes de outra empresa -
+  // nao manda esse objeto para quem so ve a empresa do pedido errado
+  for (const p of pedidos) if (p.v !== 'codigo_errado' && p.v !== 'sem_rastreio' && latestEntregas.objetos[p.cod]) objetos[p.cod] = latestEntregas.objetos[p.cod];
   const empresas = {};
   for (const p of pedidos) empresas[p.e] = latestEntregas.empresas[p.e];
   res.json({ ok: true, meta: latestEntregas.meta, empresas, pedidos, objetos, cobertura: latestEntregas.cobertura.filter((c) => pode(c.e)) });

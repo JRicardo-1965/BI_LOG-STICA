@@ -1969,7 +1969,8 @@
               <option value="unico">Único (1 pedido)</option>
               <option value="grupo">Agrupado (mesmo cliente)</option>
               <option value="ambiguo">Ambíguo (clientes diferentes)</option>
-              <option value="sem_rastreio">Sem rastreio no gateway</option>
+              <option value="sem_rastreio">Fora do banco dos Correios</option>
+              <option value="codigo_errado">Código de outro pedido</option>
             </select>
           </div>
           <div class="spacer"></div>
@@ -1985,7 +1986,9 @@
           <b>Fonte:</b> pedidos do Mira com código dos Correios, ligados aos eventos da API dos Correios pelo código de rastreio. Pedidos sem código (outros meios de entrega) não aparecem.<br>
           <b>Tempos</b> em dias corridos, pela data: <b>pedido → entrega</b> conta cada pedido; <b>postagem → entrega</b> conta cada volume uma vez. Com menos de 5 casos o valor aparece em itálico.<br>
           <b>No prazo</b> = entregue até a data prevista pelos Correios. <b>Atrasado</b> = ainda não entregue e com a previsão vencida.<br>
-          <b>Ambíguo</b> = o mesmo código está em pedidos de clientes diferentes; fica nos totais, mas fora dos tempos por pedido e da análise por cliente e localidade.<br>
+          <b>Ambíguo</b> = o mesmo código está em pedidos de clientes diferentes e nenhuma referência indica de qual pedido é o pacote; fica nos totais, mas fora dos tempos por pedido e da análise por cliente e localidade.<br>
+          <b>Código de outro pedido</b> = o código está em pedidos de clientes diferentes, mas a referência do envio indica que o pacote é do outro pedido; este pedido fica sem o pacote e fora dos tempos (provável erro de digitação no Mira); a coluna Situação mostra, em cinza, a situação desse pacote do outro pedido. <b>(ref. Correios)</b> / <b>(ref. pedido AQT)</b> = o pedido dono do pacote, pela referência gravada pelos Correios ou pelo pedido do Aqui Tem+ que gerou o pedido do Mira; conta normalmente.<br>
+          <b>Fora do banco dos Correios</b> = o pedido tem código de rastreio no Mira, mas esse objeto não está no banco dos Correios (em geral, código digitado com espaço no Mira), então não há eventos nem situação.<br>
           Cidade e UF vêm do cadastro do cliente; cluster, do cadastro de clusters; regional, da UF. <b>Tentativas</b>: classificação ainda a confirmar com a Logística.
         </div>
       </div>
@@ -4080,14 +4083,17 @@ initFiltrosMobile("entregas");
   const fmtP = v => v == null ? "—" : (Math.round(v * 1000) / 10).toLocaleString("pt-BR") + "%";
   const pouco = (txt, n) => n < MIN_N && txt !== "—" ? '<span class="ent-pouco" title="amostra pequena (' + n + ')">' + txt + "</span>" : txt;
   // cor por familia: verde = entregue, azul = em andamento, amarelo = pede atencao, vermelho = problema, cinza = sem dado
-  const SIT_CHIP = { "Entregue": "c-ok", "Em trânsito": "c-info", "Saiu para entrega": "c-info", "Aguardando retirada": "c-warning", "Problema na entrega": "c-danger", "Etiqueta emitida, não postado": "c-warning", "Devolvido ao remetente": "c-danger", "Etiqueta expirada": "c-danger", "Sem eventos": "c-neutral", "Sem rastreio no gateway": "c-neutral" };
+  const SIT_CHIP = { "Entregue": "c-ok", "Em trânsito": "c-info", "Saiu para entrega": "c-info", "Aguardando retirada": "c-warning", "Problema na entrega": "c-danger", "Etiqueta emitida, não postado": "c-warning", "Devolvido ao remetente": "c-danger", "Etiqueta expirada": "c-danger", "Sem eventos": "c-neutral", "Fora do banco dos Correios": "c-neutral", "Código de outro pedido": "c-warning" };
   // rotulo curto so na tabela (o nome completo fica no title e nos filtros/cartoes)
-  const SIT_CURTO = { "Aguardando retirada": "Aguard. retirada", "Problema na entrega": "Problema", "Etiqueta emitida, não postado": "Não postado", "Devolvido ao remetente": "Devolvido", "Sem rastreio no gateway": "Sem rastreio" };
+  const SIT_CURTO = { "Aguardando retirada": "Aguard. retirada", "Problema na entrega": "Problema", "Etiqueta emitida, não postado": "Não postado", "Devolvido ao remetente": "Devolvido", "Fora do banco dos Correios": "Fora do banco", "Código de outro pedido": "Cód. de outro pedido" };
   const PRAZO_CHIP = { "No prazo": "c-ok", "Com atraso": "c-warning", "Em aberto, no prazo": "c-info", "Em aberto, atrasado": "c-danger", "Sem previsão": "c-neutral" };
   const PRAZO_CURTO = { "Em aberto, no prazo": "Aberto, no prazo", "Em aberto, atrasado": "Aberto, atrasado" };
-  const VINC_CHIP = { unico: "", grupo: "c-neutral", ambiguo: "c-danger", sem_rastreio: "c-neutral" };
+  const VINC_CHIP = { unico: "", grupo: "c-neutral", ambiguo: "c-danger", sem_rastreio: "c-neutral", codigo_errado: "c-warning" };
   const chip = (cls, txt, curto) => !txt || txt === "—" ? "—" : (cls ? '<span class="chip ' + cls + '" title="' + esc(txt) + '">' + esc(curto || txt) + "</span>" : esc(txt));
-  const rotVinc = r => r.v === "grupo" ? "agrupado (" + r.np + " pedidos)" : r.v === "ambiguo" ? "ambíguo (" + r.np + " pedidos)" : r.v === "sem_rastreio" ? "sem rastreio" : "único";
+  // (ref. Correios) = codigo que estava em clientes diferentes, resolvido pela referencia do pedido gravada pelos Correios
+  // ref 1 = referencia dos Correios (externalCode); ref 2 = pedido do Aqui Tem+ que gerou o pedido do Mira (CodigoExterno)
+  const refTxt = r => r.ref === 2 ? " (ref. pedido AQT)" : " (ref. Correios)";
+  const rotVinc = r => r.v === "grupo" ? (r.ref ? "agrupado" + refTxt(r) : "agrupado (" + r.np + " pedidos)") : r.v === "ambiguo" ? "ambíguo (" + r.np + " pedidos)" : r.v === "sem_rastreio" ? "fora do banco" : r.v === "codigo_errado" ? "código de outro pedido" : (r.ref ? "único" + refTxt(r) : "único");
   const cidUf = r => r.cid ? r.cid + "-" + r.uf : "";
   const uniq = a => [...new Set(a.filter(Boolean))].sort((x, y) => String(x).localeCompare(String(y), "pt-BR"));
 
@@ -4112,8 +4118,12 @@ initFiltrosMobile("entregas");
   }
   function preparar() {
     R = D.pedidos.map(r => {
-      const o = D.objetos[r.cod] || null;
-      return Object.assign({}, r, { obj: o, filial: empresaAbrev(D.empresas[r.e] || r.e), sit: o ? o.sit : "Sem rastreio no gateway", prazo: o ? o.prazo : "—" });
+      // "codigo_errado": o pacote com esse codigo e de OUTRO pedido (referencia dos Correios) - nao herda o objeto
+      const o = r.v === "codigo_errado" || r.v === "sem_rastreio" ? null : (D.objetos[r.cod] || null);
+      // so para EXIBIR (30/10): situacao do pacote com esse codigo, que e do outro pedido - nao entra em nenhuma conta
+      const pacOutro = r.v === "codigo_errado" ? (D.objetos[r.cod] || null) : null;
+      const dono = r.v === "codigo_errado" ? (D.pedidos.find(x => x.cod === r.cod && x.v !== "codigo_errado") || null) : null;
+      return Object.assign({}, r, { obj: o, pacOutro, donoPed: dono ? dono.p : "", filial: empresaAbrev(D.empresas[r.e] || r.e), sit: o ? o.sit : (r.v === "codigo_errado" ? "Código de outro pedido" : "Fora do banco dos Correios"), prazo: o ? o.prazo : "—" });
     });
     el("ent-inicio").textContent = DT(D.meta.inicio);
     const m = D.meta, partes = [];
@@ -4123,10 +4133,11 @@ initFiltrosMobile("entregas");
     else partes.push("<span>Extração do BI: <b>" + DTH(m.extraidoEm) + "</b></span>");
     // a extracao do BI pode estar em dia e o banco dos Correios parado: a sincronizacao do gateway (ultimo lote de
     // rastreio) e mostrada a parte, com aviso quando passa de 24 h - um evento novo isolado nao torna os dados "atuais"
-    const sinc = Date.parse(m.gatewayUltimoJob);
-    if (isNaN(sinc)) partes.push('<span class="is-stale">Última sincronização do banco dos Correios: desconhecida</span>');
-    else if ((Date.now() - sinc) / 3600000 > 24) partes.push('<span class="is-stale">Banco dos Correios sem sincronização desde <b>' + DTH(m.gatewayUltimoJob) + "</b>: situações de objetos em andamento podem estar desatualizadas</span>");
-    else partes.push("<span>Última sincronização do banco dos Correios: <b>" + DTH(m.gatewayUltimoJob) + "</b></span>");
+    // ultima consulta REAL aos Correios (igual ao BI Operacional); sem ela (dado antigo), a data do ultimo lote
+    const consulta = m.gatewayUltimaConsulta || m.gatewayUltimoJob, sinc = Date.parse(consulta);
+    if (isNaN(sinc)) partes.push('<span class="is-stale">Última consulta aos Correios: desconhecida</span>');
+    else if ((Date.now() - sinc) / 3600000 > 24) partes.push('<span class="is-stale">Sem consulta aos Correios desde <b>' + DTH(consulta) + "</b>: situações de objetos em andamento podem estar desatualizadas</span>");
+    else partes.push("<span>Última consulta aos Correios: <b>" + DTH(consulta) + "</b></span>");
     partes.push("<span>Último evento recebido dos Correios: <b>" + DTH(m.gatewayUltimoEvento) + "</b></span>");
     partes.push("<span>Situações e atrasos calculados em <b>" + DT(m.hoje) + "</b></span>");
     el("ent-status").innerHTML = partes.join("");
@@ -4155,7 +4166,8 @@ initFiltrosMobile("entregas");
     opts(el("f-ent-mes"), uniq(R.map(r => r.mes)).reverse(), "Todos os meses", rotMes);
     const fils = uniq(R.map(r => r.e)).sort((a, b) => empresaAbrev(D.empresas[a] || a).localeCompare(empresaAbrev(D.empresas[b] || b), "pt-BR"));
     opts(el("f-ent-filial"), fils, "Todas as filiais", e => empresaAbrev(D.empresas[e] || e));
-    opts(el("f-ent-situacao"), D.meta.situacoes.filter(s => R.some(r => r.sit === s)), "Todas as situações");
+    // situacoes na ordem do meta + qualquer outra presente nos dados (ex.: rotulo antigo de um bi_entregas.json anterior)
+    opts(el("f-ent-situacao"), [...D.meta.situacoes, ...uniq(R.map(r => r.sit)).filter(s => !D.meta.situacoes.includes(s))].filter(s => R.some(r => r.sit === s)), "Todas as situações");
     montarLocais();
     const liga = (id, k, cascata) => el(id).addEventListener("change", e => { st[k] = e.target.value; if (cascata) montarLocais(); render(); });
     liga("f-ent-mes", "mes"); liga("f-ent-filial", "fil"); liga("f-ent-situacao", "sit");
@@ -4199,6 +4211,7 @@ initFiltrosMobile("entregas");
       pend: pend.length, atras: pend.filter(o => o.prazo === "Em aberto, atrasado").length,
       dev: O.filter(o => o.sit === "Devolvido ao remetente").length, tent: O.filter(o => o.tent > 0).length,
       amb: rows.filter(r => r.v === "ambiguo").length, sem: rows.filter(r => r.v === "sem_rastreio").length,
+      err: rows.filter(r => r.v === "codigo_errado").length,
     };
   }
   function card(lbl, num, sub, cls) {
@@ -4226,8 +4239,8 @@ initFiltrosMobile("entregas");
       card("Atrasados em aberto", NUM(M.atras), "pendentes com a previsão dos Correios já vencida", M.atras ? "k-danger" : ""),
       card("Devolvidos", NUM(M.dev), "objetos devolvidos ao remetente", M.dev ? "k-danger" : ""),
       card("Com tentativa sem sucesso", NUM(M.tent), "objetos com baixa sem entrega antes da entrega ou devolução", "k-confirmar"),
-      card("Rastreio ambíguo", NUM(M.amb), "pedidos com código usado por clientes diferentes · fora dos tempos por pedido e dos recortes", M.amb ? "k-warning" : ""),
-      card("Sem rastreio no gateway", NUM(M.sem), "pedidos com código válido que o banco dos Correios não acompanha" + (fora ? " · mais " + NUM(fora) + " com código fora do padrão" : "")),
+      card("Rastreio ambíguo", NUM(M.amb), "código em clientes diferentes sem indicação de qual pedido é o dono · fora dos tempos e dos recortes" + (M.err ? " · mais " + NUM(M.err) + " com código de outro pedido (corrigir no Mira)" : ""), M.amb || M.err ? "k-warning" : ""),
+      card("Fora do banco dos Correios", NUM(M.sem), "pedidos com código no Mira que não estão no banco dos Correios (em geral, digitado com espaço)" + (fora ? " · mais " + NUM(fora) + " com código fora do padrão" : "")),
     ].join("");
     const notas = [];
     if (temLocal()) {
@@ -4302,7 +4315,8 @@ initFiltrosMobile("entregas");
     switch (c[2]) {
       case "d": return DT(v);
       case "n": return v == null ? "—" : NUM(v);
-      case "sit": return chip(SIT_CHIP[v] || "c-neutral", v, SIT_CURTO[v]);
+      // codigo de outro pedido: mostra a situacao do PACOTE (que e do outro pedido), em cinza, em vez de repetir o vinculo
+      case "sit": return r.pacOutro ? chip("c-neutral", sitPacOutro(r), (SIT_CURTO[r.pacOutro.sit] || r.pacOutro.sit) + " (outro pedido)") : chip(SIT_CHIP[v] || "c-neutral", v, SIT_CURTO[v]);
       case "prazo": return chip(PRAZO_CHIP[v] || "", v, PRAZO_CURTO[v]);
       case "v": return chip(VINC_CHIP[r.v], rotVinc(r));
       default: return esc(v || "—");
@@ -4318,10 +4332,15 @@ initFiltrosMobile("entregas");
     el("empty-state-entregas").style.display = rs.length ? "none" : "";
     el("result-count-ent-det").textContent = NUM(rs.length) + " pedido" + (rs.length === 1 ? "" : "s");
   }
+  // texto da situacao do pacote de um pedido com "codigo de outro pedido"
+  function sitPacOutro(r) {
+    const o = r.pacOutro;
+    return o.sit + (o.en ? " em " + DT(o.en) : "") + " — pacote " + (r.donoPed ? "do pedido " + r.donoPed : "de outro pedido") + ", não deste";
+  }
   function copiarDet() {
     const rs = linhasDet();
     const headers = ["Filial", "Pedido", "Data do pedido", "Cliente", "Cidade", "UF", "Cluster", "Regional", "Código de rastreio", "Vínculo", "Situação", "Etiqueta", "Postado", "Entregue", "Previsão", "Prazo", "Pedido→entrega (d)", "Postagem→entrega (d)", "Tentativas (a confirmar)"];
-    const rows = rs.map(r => [r.filial, r.p, DT(r.dp), r.n, r.cid, r.uf, r.clu, r.reg, r.cod, rotVinc(r), r.sit, r.obj ? DTH(r.obj.et) : "", r.obj ? DTH(r.obj.po) : "", r.obj ? DTH(r.obj.en) : "", r.obj ? DT(r.obj.prev) : "",
+    const rows = rs.map(r => [r.filial, r.p, DT(r.dp), r.n, r.cid, r.uf, r.clu, r.reg, r.cod, rotVinc(r), r.pacOutro ? sitPacOutro(r) : r.sit, r.obj ? DTH(r.obj.et) : "", r.obj ? DTH(r.obj.po) : "", r.obj ? DTH(r.obj.en) : "", r.obj ? DT(r.obj.prev) : "",
       r.prazo, valD(r, "dPE") == null ? "" : valD(r, "dPE"), valD(r, "dPo") == null ? "" : valD(r, "dPo"), valD(r, "tent") == null ? "" : valD(r, "tent")]);
     copyToExcel(headers, rows.map(l => l.map(v => v === "—" ? "" : v)), el("copy-ent-det-status"));
   }
@@ -4333,13 +4352,13 @@ initFiltrosMobile("entregas");
     const o = r.obj;
     el("ent-modal-title").textContent = "Pedido " + r.p + " · " + r.filial;
     el("ent-modal-sub").textContent = (r.n || "") + (cidUf(r) ? " · " + cidUf(r) : "") + (r.clu ? " · " + r.clu : "");
-    let h = '<dl class="ent-kv">' + kv("Data do pedido", DT(r.dp)) + kv("Código de rastreio", r.cod) + kv("Vínculo", rotVinc(r) + (r.v === "ambiguo" ? " · não atribuído a nenhum cliente nas análises" : "")) + kv("Situação", r.sit);
+    let h = '<dl class="ent-kv">' + kv("Data do pedido", DT(r.dp)) + kv("Código de rastreio", r.cod) + kv("Vínculo", rotVinc(r) + (r.v === "ambiguo" ? " · não atribuído a nenhum cliente nas análises" : r.ref && r.v !== "codigo_errado" ? " · o mesmo código está em pedido de outro cliente, mas " + (r.ref === 2 ? "o pedido do Aqui Tem+ deste envio gerou este pedido do Mira" : "os Correios indicam que o pacote é deste pedido") : "")) + kv("Situação", r.sit) + (r.pacOutro ? kv("Pacote com este código", sitPacOutro(r)) : "");
     if (o) h += kv("Etiqueta emitida", DTH(o.et)) + kv("Postado", DTH(o.po)) + kv("Entregue", DTH(o.en)) + kv("Previsão dos Correios", DT(o.prev)) + kv("Prazo", o.prazo)
       + kv("Pedido → entrega", valD(r, "dPE") == null ? "—" : valD(r, "dPE") + " d") + kv("Postagem → entrega", o.dPo == null ? "—" : o.dPo + " d") + kv("Tentativas sem sucesso", o.tent + " (classificação a confirmar com a Logística)");
     if (r.inc) h += kv("Atenção", "postagem ou entrega anterior à data do pedido: fica fora dos tempos");
     h += "</dl>";
     if (o && o.ev.length) h += '<div class="table-scroll"><table><thead><tr><th>Data/hora</th><th>Evento</th><th>Descrição</th><th>Local</th></tr></thead><tbody>' + o.ev.map(e => "<tr><td>" + DTH(e.em) + "</td><td>" + esc(e.c) + "</td><td>" + esc(e.d) + "</td><td>" + esc(e.l) + "</td></tr>").join("") + "</tbody></table></div>";
-    else h += '<p class="modal-sub">' + (o ? "Os Correios ainda não registraram eventos para este objeto." : "Este código não está no banco dos Correios (fora da cobertura atual).") + "</p>";
+    else h += '<p class="modal-sub">' + (o ? "Os Correios ainda não registraram eventos para este objeto." : r.v === "codigo_errado" ? "Este código também está no pedido de outro cliente, e a referência do envio (Correios ou pedido do Aqui Tem+) indica que o pacote é daquele pedido: o código deste pedido provavelmente foi digitado errado no Mira." : "Este código está no Mira, mas não está no banco dos Correios (em geral, código digitado com espaço no Mira): não há eventos para acompanhar.") + "</p>";
     el("ent-modal-body").innerHTML = h;
     el("ent-modal").classList.remove("is-hidden");
     el("ent-modal-close").focus();
