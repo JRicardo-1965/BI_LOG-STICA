@@ -222,7 +222,7 @@ function requireAuth(req, res, next) {
 // O Portal manda no token do /sso a lista de abas do usuario neste BI SO quando ha restricao
 // (USUARIOS_SIS_BI_ABAS); sem o campo = todas. A lista fica no cookie de sessao (assinado) e vale ate o
 // proximo login pelo Portal. Aba nao liberada: some da tela E o servidor nao manda os dados dela.
-const ABAS_LOGISTICA = ['estoque', 'consolidado', 'giro', 'giroagrupado', 'transferencias', 'estoquefilial', 'entregas'];
+const ABAS_LOGISTICA = ['estoque', 'consolidado', 'giro', 'giroagrupado', 'transferencias', 'estoquefilial', 'entregas', 'estoqueflutuante'];
 function abasValidas(abas) {
   if (!Array.isArray(abas)) return null;
   // lado seguro: lista que so tem abas desconhecidas vira "nenhuma aba", nunca "todas"
@@ -304,6 +304,8 @@ app.post('/api/sync', express.json({ limit: '25mb' }), async (req, res) => {
       ranking: body.ranking || [],
       clientes: body.clientes || [],
       transferencias: body.transferencias || [],
+      // aba Estoque Flutuante (2026-11-05): { meta, produtos, envios[] } - envios com CodEmpresa, sem dado de cliente
+      flutuante: body.flutuante && Array.isArray(body.flutuante.envios) ? body.flutuante : null,
       meta: body.meta || {},
       usuarios,
       usuariosEmpresas: (body.usuariosEmpresas || []).map((v) => ({ email: v.email, empresa: String(v.empresa) })),
@@ -414,6 +416,9 @@ app.get('/', requireAuth, (req, res) => {
   // esses dois usam latestData.* direto (sem filterByEmpresas/filterTransferencias).
   const estoqueTodasEmpresas = se(['estoquefilial'], () => latestData.estoque || [], []);
   const transferenciasTodasEmpresas = se(['estoquefilial'], () => latestData.transferencias || [], []);
+  // Estoque Flutuante: so os envios das empresas do usuario (produtos/meta sao globais)
+  const flutVazio = { meta: {}, produtos: {}, envios: [] };
+  const flutuante = se(['estoqueflutuante'], () => { const fl = latestData.flutuante || flutVazio; return { meta: fl.meta || {}, produtos: fl.produtos || {}, envios: filterByEmpresas(fl.envios || [], allowed) }; }, flutVazio);
   const outrosSistemas = outrosSistemasDoUsuario(req.userEmail);
 
   const html = TEMPLATE
@@ -437,6 +442,7 @@ app.get('/', requireAuth, (req, res) => {
     .replaceAll('__HOSTED_USER_LABEL__', escapeHtml(req.userNome))
     .replaceAll('__HOSTED_SESSION__', '1')
     .replaceAll('__OUTROS_SISTEMAS_JSON__', jsonForScript(outrosSistemas))
+    .replaceAll('__FLUTUANTE_JSON__', jsonForScript(flutuante))
     .replaceAll('__ABAS_PERMITIDAS_JSON__', jsonForScript(ab == null ? null : ab));
 
   res.set('Cache-Control', 'no-store');
