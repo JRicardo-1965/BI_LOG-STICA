@@ -1462,10 +1462,11 @@
     </div>
 
     <div class="tab-nav">
-      <button class="tab-btn is-active" id="tab-btn-estoque" type="button" data-tab="estoque">Estoque &amp; Ressuprimento</button>
-      <button class="tab-btn" id="tab-btn-consolidado" type="button" data-tab="consolidado">Estoque &amp; Ressuprimento Agrupados</button>
-      <button class="tab-btn" id="tab-btn-giro" type="button" data-tab="giro">Giro &amp; Estoque</button>
+      <!-- 09/11: as visões agrupadas vêm antes das por filial, e a Agrupados é a aba inicial -->
+      <button class="tab-btn is-active" id="tab-btn-consolidado" type="button" data-tab="consolidado">Estoque &amp; Ressuprimento Agrupados</button>
+      <button class="tab-btn" id="tab-btn-estoque" type="button" data-tab="estoque">Estoque &amp; Ressuprimento</button>
       <button class="tab-btn" id="tab-btn-giroagrupado" type="button" data-tab="giroagrupado">Giro &amp; Estoque Agrupados</button>
+      <button class="tab-btn" id="tab-btn-giro" type="button" data-tab="giro">Giro &amp; Estoque</button>
       <button class="tab-btn" id="tab-btn-transferencias" type="button" data-tab="transferencias">Transferências</button>
       <button class="tab-btn" id="tab-btn-estoquefilial" type="button" data-tab="estoquefilial">Estoque por Filial</button>
       <button class="tab-btn" id="tab-btn-entregas" type="button" data-tab="entregas">Entregas &amp; Prazos</button>
@@ -1518,7 +1519,7 @@
       <p class="flu-nota" id="flu-nota"></p>
     </div>
 
-    <div id="tab-content-estoque">
+    <div id="tab-content-estoque" class="is-hidden">
     <p class="tab-context-note">
       <b>BI de Estoque &amp; Ponto de Ressuprimento</b> · Período analisado: <b>__PERIODO_TEXTO__</b> · Consumo médio calculado sobre este período · parâmetros de ressuprimento ajustáveis abaixo.
     </p>
@@ -1650,7 +1651,7 @@
     </div>
     </div>
 
-    <div id="tab-content-consolidado" class="is-hidden">
+    <div id="tab-content-consolidado">
     <p class="tab-context-note">
       <b>Estoque &amp; Ressuprimento Agrupados</b> · todos os produtos de todas as filiais agrupados em uma única linha por produto · Período analisado: <b>__PERIODO_TEXTO__</b> · usa os mesmos parâmetros de ressuprimento configurados na aba "Estoque &amp; Ressuprimento" · <b>clique numa linha</b> para ver em quais filiais está o estoque do produto e o que está em trânsito entre filiais.
     </p>
@@ -2345,7 +2346,7 @@ const ABAS_PERMITIDAS = __ABAS_PERMITIDAS_JSON__;
 const RAW_FLUTUANTE = __FLUTUANTE_JSON__;
 // Aba inicial = primeira liberada (calculada ja aqui porque o render da aba "Estoque & Ressuprimento"
 // roda antes do initTabs). null = nenhuma aba liberada.
-const ABAS_LOGISTICA = ["estoque", "consolidado", "giro", "giroagrupado", "transferencias", "estoquefilial", "entregas", "estoqueflutuante"];
+const ABAS_LOGISTICA = ["consolidado", "estoque", "giroagrupado", "giro", "transferencias", "estoquefilial", "entregas", "estoqueflutuante"];
 const ABA_INICIAL = ABAS_LOGISTICA.find((t) => !Array.isArray(ABAS_PERMITIDAS) || ABAS_PERMITIDAS.includes(t)) || null;
 
 const today = new Date("__TODAY_ISO__T00:00:00");
@@ -2891,6 +2892,8 @@ document.getElementById("reset-params").addEventListener("click", () => {
 applyParams();
 // "Estoque & Ressuprimento" e' a aba visivel no load - render inicial so se ela estiver liberada.
 if (ABA_INICIAL === "estoque") render();
+// 09/11: a aba inicial passou a ser a "Agrupados"; ao abrir "Estoque & Ressuprimento" pelo botão, o initTabs chama este render
+window.renderEstoque = render;
 
 // Aba "Ressuprimento Agrupado" (2026-09-28): mesmas linhas de `data` (Empresa x Produto), mas
 // somadas por Produto (todas as filiais juntas) e recalculadas com a mesma formula/params da aba
@@ -3595,7 +3598,7 @@ initFiltrosMobile("entregas");
 })();
 
 (function initTabs() {
-  const tabs = ["estoque", "consolidado", "giro", "giroagrupado", "transferencias", "estoquefilial", "entregas", "estoqueflutuante"];
+  const tabs = ["consolidado", "estoque", "giroagrupado", "giro", "transferencias", "estoquefilial", "entregas", "estoqueflutuante"];
   const btns = {};
   const contents = {};
   for (const t of tabs) {
@@ -3609,6 +3612,7 @@ initFiltrosMobile("entregas");
       btns[t].classList.toggle("is-active", isActive);
       contents[t].classList.toggle("is-hidden", !isActive);
     }
+    if (tab === "estoque" && window.renderEstoque) window.renderEstoque();
     if (tab === "consolidado" && window.renderConsolidado) window.renderConsolidado();
     if (tab === "giro" && window.renderGiro) window.renderGiro();
     if (tab === "giroagrupado" && window.renderGiroAgrupado) window.renderGiroAgrupado();
@@ -4880,6 +4884,7 @@ initFiltrosMobile("entregas");
 
 // permissao por aba: "Estoque & Ressuprimento" nao liberada -> abre na primeira aba liberada
 // (aqui no fim, depois de todos os init*Tab registrarem o render).
-if (ABA_INICIAL && ABA_INICIAL !== "estoque" && window.activateTab) window.activateTab(ABA_INICIAL);
+// 09/11: sempre ativa a aba inicial aqui (hoje a "Agrupados"), o que já desenha a tabela dela.
+if (ABA_INICIAL && window.activateTab) window.activateTab(ABA_INICIAL);
 
 </script>
