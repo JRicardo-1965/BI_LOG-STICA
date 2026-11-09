@@ -1049,6 +1049,20 @@
     overflow-x: hidden;
   }
   .modal-card-wide.is-compact { padding: 12px 16px; }
+  /* detalhe por filial da aba Agrupados (09/11). O modal fica fora do .app (que define a fonte) e a regra geral de
+     tabela tem min-width 900px - aqui as duas tabelas cabem na largura do modal. */
+  #consolidado-detalhe-modal { font-family: var(--sans); color: var(--text); }
+  #tbl-consolidado-detalhe, .consolidado-transito-tbl { min-width: 0; }
+  #tbl-consolidado-detalhe thead th { white-space: normal; line-height: 1.25; }
+  #tbody-consolidado tr { cursor: pointer; }
+  #tbody-consolidado tr:focus-visible { outline: 2px solid var(--accent); outline-offset: -2px; }
+  .consolidado-detalhe-h3 { font-size: 12.5px; margin: 14px 0 2px; color: var(--text); }
+  #tbl-consolidado-detalhe tfoot td { font-weight: 700; border-top: 1px solid var(--border); }
+  #tbl-consolidado-detalhe .pct-barra { display: inline-block; height: 6px; border-radius: 3px; background: var(--accent); vertical-align: middle; margin-right: 6px; opacity: .7; }
+  #tbl-consolidado-detalhe tr.sem-estoque td { color: var(--text-muted); }
+  .consolidado-transito-tbl { width: 100%; border-collapse: collapse; font-size: 12px; }
+  .consolidado-transito-tbl th, .consolidado-transito-tbl td { padding: 5px 6px; border-bottom: 1px solid var(--border); text-align: left; }
+  .consolidado-transito-tbl .num-cell { text-align: right; font-variant-numeric: tabular-nums; }
   .modal-card-wide.is-compact .modal-close-row { margin-top: 8px; }
   .ranking-filters-note { font-size: 11px; color: var(--text-muted); margin: 0 0 10px; }
   .ranking-empty { padding: 30px; text-align: center; color: var(--text-muted); font-size: 12.5px; }
@@ -1638,7 +1652,7 @@
 
     <div id="tab-content-consolidado" class="is-hidden">
     <p class="tab-context-note">
-      <b>Estoque &amp; Ressuprimento Agrupados</b> · todos os produtos de todas as filiais agrupados em uma única linha por produto · Período analisado: <b>__PERIODO_TEXTO__</b> · usa os mesmos parâmetros de ressuprimento configurados na aba "Estoque &amp; Ressuprimento".
+      <b>Estoque &amp; Ressuprimento Agrupados</b> · todos os produtos de todas as filiais agrupados em uma única linha por produto · Período analisado: <b>__PERIODO_TEXTO__</b> · usa os mesmos parâmetros de ressuprimento configurados na aba "Estoque &amp; Ressuprimento" · <b>clique numa linha</b> para ver em quais filiais está o estoque do produto e o que está em trânsito entre filiais.
     </p>
     <button class="mob-filtros-btn" type="button" id="consolidado-filtros-btn">🔽 Filtros</button>
     <div class="mob-filtros-backdrop" id="consolidado-filtros-backdrop"></div>
@@ -2226,6 +2240,42 @@
         <span class="copy-status" id="copy-abc-resumo-produto-status"></span>
       </div>
       <button class="modal-close-btn" id="abc-resumo-produto-close-btn" type="button">Fechar</button>
+    </div>
+  </div>
+</div>
+
+<!-- Detalhe da aba "Estoque & Ressuprimento Agrupados" (09/11): ao clicar num produto, o estoque de cada filial que compõe a linha
+     somada + transferências entre filiais ainda sem aceite (em trânsito). -->
+<div class="modal-overlay is-hidden" id="consolidado-detalhe-modal">
+  <div class="modal-card modal-card-wide" role="dialog" aria-modal="true" aria-labelledby="consolidado-detalhe-title">
+    <h2 id="consolidado-detalhe-title">Onde está o estoque</h2>
+    <p class="modal-sub" id="consolidado-detalhe-sub"></p>
+    <div class="table-scroll" style="max-height: 46vh;">
+      <table id="tbl-consolidado-detalhe">
+        <thead>
+          <tr>
+            <th>Filial</th>
+            <th class="num-cell">Estoque<br>atual</th>
+            <th class="num-cell">% do<br>estoque</th>
+            <th class="num-cell">Venda<br>mês</th>
+            <th class="num-cell">Consumo<br>médio/dia</th>
+            <th class="num-cell">Dias<br>estimados</th>
+            <th>Situação</th>
+          </tr>
+        </thead>
+        <tbody id="consolidado-detalhe-tbody"></tbody>
+        <tfoot id="consolidado-detalhe-tfoot"></tfoot>
+      </table>
+    </div>
+    <h3 class="consolidado-detalhe-h3">Em trânsito entre filiais</h3>
+    <p class="modal-sub">Transferências enviadas que o destino ainda não aceitou: ainda não entraram no estoque da filial de destino.</p>
+    <div id="consolidado-detalhe-transito"></div>
+    <div class="modal-close-row" style="justify-content: space-between; align-items: center;">
+      <div style="display:flex; align-items:center; gap:8px;">
+        <button class="clear-btn copy-btn" id="copy-consolidado-detalhe-btn" type="button">📊 Exportar Excel</button>
+        <span class="copy-status" id="copy-consolidado-detalhe-status"></span>
+      </div>
+      <button class="modal-close-btn" id="consolidado-detalhe-close-btn" type="button">Fechar</button>
     </div>
   </div>
 </div>
@@ -2926,6 +2976,10 @@ if (ABA_INICIAL === "estoque") render();
         <td class="num-cell">${fmtDate(r._dataPedido)}</td>
         <td><span class="chip c-${r._statusBucket}">${STATUS_LABEL[r._statusBucket]}</span></td>
       `;
+      tr.tabIndex = 0;
+      tr.title = "Clique para ver em quais filiais está o estoque deste produto";
+      tr.addEventListener("click", () => abrirDetalheConsolidado(r));
+      tr.addEventListener("keydown", e => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); abrirDetalheConsolidado(r); } });
       tbody.appendChild(tr);
     }
 
@@ -2980,6 +3034,76 @@ if (ABA_INICIAL === "estoque") render();
       r._diasParaPedido, r._dataPedido, STATUS_LABEL[r._statusBucket]
     ]);
     copyToExcel(headers, rowsOut, document.getElementById("copy-consolidado-status"));
+  });
+
+  // ---- Detalhe "onde está o estoque" (09/11): as linhas de `data` (Empresa x Produto) que somam a linha clicada, com os mesmos
+  // cálculos por filial da aba "Estoque & Ressuprimento" (applyParams/recomputeDerived), e as transferências sem aceite
+  // daquele produto. Usa `data`/RAW_TRANSFERENCIAS: no BI hospedado, só as empresas liberadas para o usuário (igual à tabela).
+  const detModal = document.getElementById("consolidado-detalhe-modal");
+  let detalheExcel = { headers: [], rows: [] };
+  const diasDesde = iso => { if (!iso) return null; const a = new Date(String(iso).slice(0, 10) + "T12:00:00"), b = new Date(TODAY_ISO_STR + "T12:00:00"); return Math.round((b - a) / 86400000); };
+
+  function abrirDetalheConsolidado(agg) {
+    const filiais = data.filter(d => d.CodProd === agg.CodProd)
+      .sort((a, b) => (Number(b.EstoqueAtual) || 0) - (Number(a.EstoqueAtual) || 0) || empresaAbrev(a.Empresa).localeCompare(empresaAbrev(b.Empresa), "pt-BR"));
+    const total = filiais.reduce((s, d) => s + (Number(d.EstoqueAtual) || 0), 0);
+    const comEstoque = filiais.filter(d => (Number(d.EstoqueAtual) || 0) > 0).length;
+    const maxEst = Math.max(1, ...filiais.map(d => Number(d.EstoqueAtual) || 0));
+
+    document.getElementById("consolidado-detalhe-title").textContent = `${agg.Produto} — onde está o estoque`;
+    document.getElementById("consolidado-detalhe-sub").textContent =
+      `${fmtNum(total)} unidades em ${comEstoque} de ${filiais.length} filiais · mesmo total da linha da tabela · situação de cada filial com os parâmetros da aba "Estoque & Ressuprimento"`;
+
+    document.getElementById("consolidado-detalhe-tbody").innerHTML = filiais.map(d => {
+      const est = Number(d.EstoqueAtual) || 0;
+      const pct = total > 0 ? est / total * 100 : 0;
+      const semRegistro = d.EstoqueAtual === null || d.EstoqueAtual === undefined;
+      return `<tr class="${est > 0 ? "" : "sem-estoque"}">
+        <td>${empresaBadgeHtml(d.Empresa)}</td>
+        <td class="num-cell">${semRegistro ? "—" : fmtNum(est)}</td>
+        <td class="num-cell">${est > 0 ? `<span class="pct-barra" style="width:${Math.max(2, Math.round(est / maxEst * 48))}px"></span>${fmtNum(pct, 1)}%` : "—"}</td>
+        <td class="num-cell">${fmtNum(d.VendaMes, 0)}</td>
+        <td class="num-cell">${fmtNum(d.ConsumoMedioDiario, 1)}</td>
+        <td class="num-cell">${fmtDiasEstoque(d._diasEstoque)}</td>
+        <td><span class="chip c-${d._statusBucket}">${STATUS_LABEL[d._statusBucket] || "—"}</span></td>
+      </tr>`;
+    }).join("") || `<tr><td colspan="7" style="text-align:center;color:var(--text-muted);padding:12px 0;">Nenhuma filial com este produto.</td></tr>`;
+    document.getElementById("consolidado-detalhe-tfoot").innerHTML = `<tr>
+      <td>Total</td>
+      <td class="num-cell">${fmtNum(total)}</td>
+      <td class="num-cell">${total > 0 ? "100%" : "—"}</td>
+      <td class="num-cell">${fmtNum(agg.VendaMes, 0)}</td>
+      <td class="num-cell">${fmtNum(agg.ConsumoMedioDiario, 1)}</td>
+      <td class="num-cell">${fmtDiasEstoque(agg._diasEstoque)}</td>
+      <td><span class="chip c-${agg._statusBucket}">${STATUS_LABEL[agg._statusBucket]}</span></td>
+    </tr>`;
+
+    const transito = RAW_TRANSFERENCIAS.filter(t => !t.AceiteDado && t.Produto === agg.Produto)
+      .sort((a, b) => String(a.Data).localeCompare(String(b.Data)));
+    const totTransito = transito.reduce((s, t) => s + (Number(t.Qte) || 0), 0);
+    document.getElementById("consolidado-detalhe-transito").innerHTML = transito.length
+      ? `<table class="consolidado-transito-tbl"><thead><tr><th>De</th><th>Para</th><th class="num-cell">Quantidade</th><th>Enviado em</th><th class="num-cell">Há</th></tr></thead><tbody>`
+        + transito.map(t => { const dd = diasDesde(t.Data); return `<tr><td>${empresaBadgeHtml(t.EmpresaOrigem)}</td><td>${empresaBadgeHtml(t.EmpresaDestino)}</td><td class="num-cell">${fmtNum(t.Qte)}</td><td>${fmtDate(String(t.Data).slice(0, 10))}</td><td class="num-cell">${dd === null ? "—" : dd + (dd === 1 ? " dia" : " dias")}</td></tr>`; }).join("")
+        + `</tbody><tfoot><tr><td colspan="2"><b>Total em trânsito</b></td><td class="num-cell"><b>${fmtNum(totTransito)}</b></td><td colspan="2"></td></tr></tfoot></table>`
+      : `<p class="modal-sub" style="margin:0;">Nenhuma transferência deste produto em trânsito.</p>`;
+
+    detalheExcel = {
+      headers: ["Produto", "Filial", "Estoque atual", "% do estoque", "Venda mês", "Consumo médio/dia", "Dias estimados", "Situação"],
+      rows: [
+        ...filiais.map(d => { const est = Number(d.EstoqueAtual) || 0; return [agg.Produto, empresaAbrev(d.Empresa), d.EstoqueAtual === null || d.EstoqueAtual === undefined ? "" : est,
+          total > 0 ? Math.round(est / total * 1000) / 10 : "", d.VendaMes, d.ConsumoMedioDiario, d._diasEstoque, STATUS_LABEL[d._statusBucket] || ""]; }),
+        [agg.Produto, "TOTAL", total, total > 0 ? 100 : "", agg.VendaMes, agg.ConsumoMedioDiario, agg._diasEstoque, STATUS_LABEL[agg._statusBucket]],
+        ...transito.map(t => [agg.Produto, `EM TRÂNSITO ${empresaAbrev(t.EmpresaOrigem)} → ${empresaAbrev(t.EmpresaDestino)} (enviado em ${fmtDate(String(t.Data).slice(0, 10))})`, Number(t.Qte) || 0, "", "", "", "", "Em trânsito"])
+      ]
+    };
+    detModal.classList.remove("is-hidden");
+  }
+  function fecharDetalheConsolidado() { detModal.classList.add("is-hidden"); }
+  document.getElementById("consolidado-detalhe-close-btn").addEventListener("click", fecharDetalheConsolidado);
+  detModal.addEventListener("click", e => { if (e.target === detModal) fecharDetalheConsolidado(); });
+  document.addEventListener("keydown", e => { if (e.key === "Escape" && !detModal.classList.contains("is-hidden")) fecharDetalheConsolidado(); });
+  document.getElementById("copy-consolidado-detalhe-btn").addEventListener("click", () => {
+    copyToExcel(detalheExcel.headers, detalheExcel.rows, document.getElementById("copy-consolidado-detalhe-status"));
   });
 
   window.renderConsolidado = render;
