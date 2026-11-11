@@ -399,14 +399,14 @@ app.get('/', requireAuth, (req, res) => {
   const allowed = empresasDoUsuario(req.userEmail);
   // Cada bloco de dados so vai se ALGUMA aba que o usa estiver liberada (mapa conferido nos init*Tab do
   // template): RAW_DATA -> estoque/consolidado/giro/giroagrupado; RAW_RANKING -> popup de ranking (botoes dentro da aba
-  // estoque); RAW_TRANSFERENCIAS -> transferencias; *_TODAS_EMPRESAS -> estoquefilial. RAW_CLIENTES so
-  // alimenta um helper global (cores de segmento) que nenhuma aba chama hoje - vai se houver alguma aba.
+  // estoque); RAW_TRANSFERENCIAS -> transferencias; RAW_DATA e RAW_TRANSFERENCIAS tambem -> estoqueflutuante (11/11); *_TODAS_EMPRESAS -> estoquefilial. RAW_CLIENTES
+  // alimenta a venda mes a mes da aba Estoque Flutuante (11/11) e um helper global (cores de segmento) - vai se houver alguma aba.
   const ab = req.abas;
   const se = (abas, valor, vazio) => (algumaLiberada(ab, abas) ? valor() : vazio);
-  const estoque = se(['estoque', 'consolidado', 'giro', 'giroagrupado'], () => filterByEmpresas(latestData.estoque, allowed), []);
+  const estoque = se(['estoque', 'consolidado', 'giro', 'giroagrupado', 'estoqueflutuante'], () => filterByEmpresas(latestData.estoque, allowed), []);
   const ranking = se(['estoque'], () => filterByEmpresas(latestData.ranking, allowed), []);
   const clientes = se(ABAS_LOGISTICA, () => filterByEmpresas(latestData.clientes, allowed), []);
-  const transferencias = se(['transferencias'], () => filterTransferencias(latestData.transferencias, allowed), []);
+  const transferencias = se(['transferencias', 'estoqueflutuante'], () => filterTransferencias(latestData.transferencias, allowed), []);
   const meta = latestData.meta || {};
 
   // Estoque por Filial e' a UNICA visao que foge da regra de "cada usuario so ve as empresas

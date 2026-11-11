@@ -1420,6 +1420,118 @@
   .flu .flu-comp-bar span { display: block; height: 100%; border-radius: 9px; }
   .flu .flu-comp-sub { grid-column: 1 / -1; font-size: 10px; color: var(--text-muted); }
   .flu .flu-nota { font-size: 10px; color: var(--text-muted); line-height: 1.5; margin: 4px 2px 0; }
+  /* ---- 10/11 (simplificada): filtros de seleção múltipla, cartões, tabela por chip ou por filial e janela de detalhe ---- */
+  .flu .flu-filtros { overflow: visible; }   /* a lista do filtro abre para fora do painel */
+  .flu .flu-filtros .info-note { border-radius: 12px 12px 0 0; }
+  .flu .flu-ms { position: relative; }
+  .flu .flu-ms-btn { all: unset; box-sizing: border-box; display: flex; align-items: center; gap: 6px; cursor: pointer; font-size: 12.5px; font-weight: 600; color: var(--text); font-family: var(--sans); min-width: 84px; max-width: 220px; line-height: 1.3; }
+  .flu .flu-ms-btn:focus-visible { outline: 2px solid var(--accent-strong); outline-offset: 3px; border-radius: 4px; }
+  .flu .flu-ms-txt { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .flu .flu-ms-seta { color: var(--text-muted); font-size: 10px; }
+  .flu .flu-ms.tem-sel { border-color: var(--accent); }
+  .flu .flu-ms.tem-sel .flu-ms-btn { color: var(--accent-strong); }
+  .flu .flu-ms-pop { display: none; position: absolute; top: calc(100% + 4px); left: 0; z-index: 60; flex-direction: column; min-width: 100%; width: max-content; max-width: 340px; max-height: 340px; background: var(--surface); border: 1px solid var(--border); border-radius: 10px; box-shadow: 0 8px 28px rgba(0,0,0,.18); }
+  .flu .flu-ms.is-aberto .flu-ms-pop { display: flex; }
+  .flu .flu-ms-busca { margin: 8px 8px 2px; padding: 5px 8px; border: 1px solid var(--border); border-radius: 7px; background: var(--surface-2); color: var(--text); font-size: 12px; font-family: var(--sans); outline: none; }
+  .flu .flu-ms-busca:focus { border-color: var(--accent); }
+  .flu .flu-ms-lista { overflow-y: auto; padding: 6px 4px; flex: 1; min-height: 0; }
+  .flu .flu-ms-pop .flu-ms-op { display: flex; align-items: center; gap: 8px; padding: 4px 8px; border-radius: 6px; cursor: pointer; font-size: 12px; font-weight: 500; text-transform: none; letter-spacing: 0; color: var(--text); white-space: nowrap; }
+  .flu .flu-ms-pop .flu-ms-op:hover { background: var(--accent-soft); }
+  .flu .flu-ms-pop .flu-ms-op input { accent-color: var(--accent); margin: 0; width: 14px; height: 14px; cursor: pointer; flex: none; }
+  .flu .flu-ms-pop .flu-ms-grp { font-weight: 700; margin-top: 4px; }
+  .flu .flu-ms-pop .flu-ms-grp:first-child { margin-top: 0; }
+  .flu .flu-ms-grp .sw { display: inline-block; width: 8px; height: 8px; border-radius: 2px; margin-right: 6px; }
+  .flu .flu-ms-lista.tem-grupos .flu-ms-op:not(.flu-ms-grp) { padding-left: 24px; }
+  .flu .flu-ms-vazio { padding: 14px; font-size: 12px; color: var(--text-muted); text-align: center; }
+  .flu .flu-ms-pe { display: flex; justify-content: space-between; gap: 8px; padding: 6px 10px; border-top: 1px solid var(--border); }
+  .flu .flu-ms-pe button { all: unset; cursor: pointer; font-size: 11.5px; font-weight: 600; color: var(--accent-strong); padding: 2px 4px; border-radius: 4px; }
+  .flu .flu-ms-pe button:hover { text-decoration: underline; }
+  .flu .flu-ms-pe button:focus-visible { outline: 2px solid var(--accent-strong); }
+  @media (max-width: 680px) { .flu .flu-ms-pop { max-width: calc(100vw - 48px); max-height: 60vh; } .flu .flu-ms-btn { max-width: none; } }
+  .flu [data-det]:focus-visible, .flu [role="button"]:focus-visible, .flu .flu-seta:focus-visible { outline: 2px solid var(--accent-strong); outline-offset: -2px; border-radius: 4px; }
+  .flu #flu-chip-th th { position: static; }
+  .flu #flu-chip-tb button.flu-seta { all: unset; display: inline-block; width: 14px; cursor: pointer; color: var(--text-muted); }
+  .flu .flu-det-td { text-align: right; width: 1%; }
+  .flu .flu-det-btn { all: unset; cursor: pointer; font-family: var(--sans); font-size: 10.5px; font-weight: 600; color: var(--accent-strong); border: 1px solid var(--border); border-radius: 99px; padding: 1px 9px; white-space: nowrap; background: var(--surface); }
+  .flu .flu-det-btn:hover { background: var(--accent-soft); border-color: var(--accent); }
+  .flu .flu-tbl.flu-tbl-fixa tbody tr { cursor: default; }
+  .flu .flu-tbl th.esq, .flu .flu-tbl td.esq { text-align: left; }
+  .flu .flu-filtros .vgr-top { padding: 0 12px 10px; }
+  .flu .flu-filtros .flu-ativos { margin: 0; padding: 0 12px 10px; }
+  .flu .flu-det { max-width: 980px; width: 100%; font-family: var(--sans); color: var(--text); }
+  .flu .flu-det-cab { display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; }
+  .flu .flu-det-cab h2 { font-size: 16px; }
+  .flu .flu-det-cab .modal-sub { font-size: 12px; margin-bottom: 10px; }
+  .flu .flu-det-x { all: unset; cursor: pointer; width: 28px; height: 28px; line-height: 28px; text-align: center; border-radius: 8px; color: var(--text-muted); font-size: 14px; flex: none; }
+  .flu .flu-det-x:hover { background: var(--surface-2); color: var(--text); }
+  .flu .flu-det-x:focus-visible, .flu .flu-det-volta:focus-visible, .flu .flu-lnk:focus-visible, .flu .flu-det-btn:focus-visible { outline: 2px solid var(--accent-strong); outline-offset: 2px; }
+  .flu .flu-det-volta { all: unset; cursor: pointer; display: inline-block; font-size: 11.5px; font-weight: 600; color: var(--accent-strong); margin-bottom: 6px; border-radius: 4px; }
+  .flu .flu-det-volta:hover { text-decoration: underline; }
+  .flu .flu-det-volta[hidden] { display: none; }
+  .flu .flu-det thead th { position: static; }
+  .flu .flu-det-tiles { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; }
+  .flu .flu-det-tile { display: flex; flex-direction: column; gap: 2px; background: var(--surface-2); border: 1px solid var(--border); border-radius: 10px; padding: 9px 12px; min-width: 0; }
+  .flu .flu-det-tile .eyebrow { font-size: 10px; text-transform: uppercase; letter-spacing: .05em; color: var(--text-muted); font-weight: 600; }
+  .flu .flu-det-tile .value { font-size: 20px; font-weight: 700; font-family: var(--mono); font-variant-numeric: tabular-nums; color: var(--text); line-height: 1.2; }
+  .flu .flu-det-tile .sub { font-size: 10.5px; color: var(--text-muted); line-height: 1.35; }
+  .flu .flu-det-tile.is-dest { background: var(--accent-soft); border-color: var(--accent); }
+  .flu .flu-det-tile.is-dest .value { color: var(--accent-strong); }
+  .flu .flu-det-tile.is-falta { background: var(--danger-soft); border-color: var(--danger); }
+  .flu .flu-det-sec { margin-top: 16px; }
+  .flu .flu-det-sec h4, .flu .flu-det-card h4 { margin: 0 0 6px; font-size: 12.5px; color: var(--text); }
+  .flu .flu-det-sec h4 .cap { font-weight: 400; font-size: 10.5px; color: var(--text-muted); margin-left: 6px; }
+  .flu .flu-det-cards { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-top: 16px; }
+  .flu .flu-det-card { border: 1px solid var(--border); border-radius: 10px; padding: 10px 12px; min-width: 0; }
+  .flu .flu-conta-l { display: flex; justify-content: space-between; align-items: baseline; gap: 10px; padding: 4px 0; border-bottom: 1px solid var(--border); font-size: 12px; }
+  .flu .flu-conta-l:last-child { border-bottom: 0; }
+  .flu .flu-conta-l small { display: block; font-size: 10px; color: var(--text-muted); }
+  .flu .flu-conta-l b { font-family: var(--mono); font-variant-numeric: tabular-nums; white-space: nowrap; }
+  .flu .flu-conta-l.is-res { font-weight: 700; border-top: 2px solid var(--border); border-bottom: 0; margin-top: 2px; padding-top: 6px; }
+  .flu .flu-conta-l.is-res b { color: var(--accent-strong); }
+  .flu .flu-conta-obs { font-size: 11px; color: var(--text-muted); margin: 6px 0 0; line-height: 1.4; }
+  .flu .flu-lnk { all: unset; cursor: pointer; color: var(--accent-strong); font-weight: 600; border-radius: 3px; }
+  .flu .flu-lnk:hover { text-decoration: underline; }
+  .flu .flu-det .flu-tbl { width: 100%; font-size: 11.5px; }
+  /* v6 (11/11): 5 cartões (período × hoje), tabela com todas as linhas da mesma altura e cabeçalho em dois blocos, mês a mês no detalhe */
+  .flu .flu-kpis5 { grid-template-columns: repeat(5, minmax(0, 1fr)); }
+  @media (max-width: 1100px) { .flu .flu-kpis5 { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+  .flu .flu-kpis5 .vgr-kpi .sub { line-height: 1.4; }
+  .flu .flu-kpis5 .vgr-kpi { cursor: default; }
+  .flu .flu-kpis5 .vgr-kpi { justify-content: flex-start; }   /* número sempre na mesma altura, qualquer que seja o tamanho do texto de baixo */
+  .flu .flu-kpis5 .vgr-kpi .eyebrow { display: flex; align-items: center; min-height: 18px; }
+  .flu .flu-kpis5 .vgr-kpi .value { line-height: 1.2; }
+  .flu .flu-quando { display: inline-block; margin-left: 4px; padding: 0 6px; border-radius: 99px; font-size: 9px; letter-spacing: .04em; background: var(--surface-2); color: var(--text-muted); border: 1px solid var(--border); vertical-align: 1px; }
+  .flu .flu-quando.is-per { background: var(--accent-soft); color: var(--accent-strong); border-color: transparent; }
+  .flu .flu-kpi-parado { color: var(--warning); }
+  .flu .flu-tbl5 { width: 100%; }
+  .flu #flu-chip-th tr.flu-grupos th { text-align: center; color: var(--text); font-size: 10px; border-bottom: 1px solid var(--border); }
+  .flu #flu-chip-th tr.flu-grupos th[rowspan] { text-align: left; vertical-align: bottom; color: var(--text-muted); }
+  .flu .flu-tbl .g-ini { border-left: 2px solid var(--border); }
+  .flu .flu-tbl5 th.num, .flu .flu-tbl5 td.num { width: 13%; }
+  .flu .flu-tbl5 tbody td { height: 38px; padding-top: 0; padding-bottom: 0; vertical-align: middle; white-space: nowrap; }
+  .flu .flu-tbl5 tbody tr { cursor: default; }
+  .flu .flu-tbl5 tbody tr.flu-pai { cursor: pointer; }
+  .flu .flu-tbl5 tbody tr.flu-pai:hover td { background: var(--accent-soft); }
+  .flu .flu-tbl5 tbody tr.flu-pai:focus-visible { outline: 2px solid var(--accent-strong); outline-offset: -2px; }
+  .flu .flu-tbl5 td.nome small { margin-left: 8px; font-size: 10.5px; font-weight: 500; color: var(--text-muted); }
+  .flu .flu-tbl5 .flu-seta { display: inline-block; width: 16px; color: var(--text-muted); }
+  .flu .flu-tbl5 tbody tr.flu-grp td { background: var(--surface-2); font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: .05em; color: var(--text-muted); }
+  .flu .flu-tbl5 tbody tr.flu-grp td .sw { display: inline-block; width: 8px; height: 8px; border-radius: 2px; margin-right: 6px; }
+  .flu .flu-tbl5 tbody tr.flu-filho td { background: color-mix(in srgb, var(--surface-2) 45%, transparent); }
+  .flu .flu-tbl5 tbody tr.flu-filho td.nome { padding-left: 34px; }
+  .flu .flu-tbl5 tbody tr.is-tot td { cursor: default; }
+  .flu .flu-tbl5 .sem { color: var(--text-faint); }
+  .flu .flu-parado { color: var(--warning); font-weight: 600; }
+  .flu .flu-det-tiles.t5 { grid-template-columns: repeat(5, 1fr); }
+  .flu .flu-det .flu-tbl td.num { font-family: var(--mono); }
+  .flu .flu-det .flu-tbl td.ps { white-space: normal; min-width: 240px; line-height: 1.35; }
+  .flu .flu-det .flu-tbl tr.is-per td { background: var(--accent-soft); font-weight: 600; }
+  .flu .flu-det .flu-tbl td small { color: var(--text-muted); font-weight: 400; }
+  .flu .flu-det .flu-bar-td { width: 24%; }
+  .flu .flu-det .flu-bar { display: block; height: 8px; border-radius: 4px; background: var(--accent); min-width: 2px; }
+  .flu .flu-det .flu-bar.is-fl { background: var(--seg-3); }
+  .flu .flu-det .flu-vazio { font-size: 11.5px; color: var(--text-muted); padding: 6px 0; }
+  @media (max-width: 760px) { .flu .flu-det-tiles, .flu .flu-det-tiles.t5 { grid-template-columns: repeat(2, 1fr); } .flu .flu-det-cards { grid-template-columns: 1fr; } }
   /* dica ao passar o mouse (fica no body, fora da aba) */
   .vgr-tooltip { position: fixed; z-index: 9999; display: none; pointer-events: none; background: var(--text); color: var(--surface); font-family: var(--sans); font-size: 11.5px; line-height: 1.4; padding: 6px 10px; border-radius: 8px; box-shadow: var(--shadow); max-width: 240px; }
   .vgr-tooltip b { font-family: var(--mono); }
@@ -1473,20 +1585,22 @@
       <button class="tab-btn" id="tab-btn-estoqueflutuante" type="button" data-tab="estoqueflutuante">Estoque Flutuante</button>
     </div>
 
-<!-- ===================== TAB: ESTOQUE FLUTUANTE (2026-10-29, trazida do BI Reabastecimento) ===================== -->
+<!-- ===================== TAB: ESTOQUE FLUTUANTE (2026-10-29, trazida do BI Reabastecimento; simplificada em 2026-11-10 e 11-11) =====================
+     por filial e chip: venda média mensal, estoque flutuante (em trânsito), estoque total e dias estimados; filtros de seleção múltipla;
+     uma tabela (por chip ou por filial) e o detalhe no clique (janela flu-det-modal) -->
     <div id="tab-content-estoqueflutuante" class="is-hidden flu">
-      <div class="panel" style="margin-bottom:10px;">
+      <div class="panel flu-filtros" style="margin-bottom:10px;">
         <p class="info-note" style="margin:0 0 10px;">
-          <b>Estoque flutuante</b> = chips que os clientes já pediram e ainda não receberam (do pedido no Mira até a entrega pelos Correios).
-          É o estoque "em trânsito": quanto maior e mais demorado, mais capital parado no caminho e mais tempo o cliente espera para repor.
+          <b>Estoque flutuante</b> = chips em trânsito: chegando de outra filial (transferência ainda sem aceite) ou a caminho do cliente (pedido do Mira ainda não entregue pelos Correios).
+          <b>Estoque total</b> = estoque na filial + estoque flutuante. <b>Dias estimados</b> = por quantos dias o estoque total de hoje dura no ritmo de venda do período. O <b>período</b> vale para a venda e o flutuante médio; o estoque é sempre o de hoje.
           <span id="flu-fonte"></span>
         </p>
         <div class="vgr-top">
           <div class="vgr-filters">
             <div class="vgr-filter"><label for="flu-per">Período</label><select id="flu-per"></select></div>
-            <div class="vgr-filter"><label for="flu-fil">Filial</label><select id="flu-fil"></select></div>
-            <div class="vgr-filter"><label for="flu-tipo">Produto</label><select id="flu-tipo"></select></div>
-            <div class="vgr-filter"><label for="flu-op">Operadora</label><select id="flu-op"></select></div>
+            <div class="vgr-filter flu-ms" data-k="fil"><label for="flu-ms-fil">Filial</label><button type="button" class="flu-ms-btn" id="flu-ms-fil" aria-haspopup="true" aria-expanded="false"><span class="flu-ms-txt">Todas</span><span class="flu-ms-seta" aria-hidden="true">▾</span></button><div class="flu-ms-pop"></div></div>
+            <div class="vgr-filter flu-ms" data-k="op"><label for="flu-ms-op">Operadora</label><button type="button" class="flu-ms-btn" id="flu-ms-op" aria-haspopup="true" aria-expanded="false"><span class="flu-ms-txt">Todas</span><span class="flu-ms-seta" aria-hidden="true">▾</span></button><div class="flu-ms-pop"></div></div>
+            <div class="vgr-filter flu-ms" data-k="prod"><label for="flu-ms-prod">Produto</label><button type="button" class="flu-ms-btn" id="flu-ms-prod" aria-haspopup="true" aria-expanded="false"><span class="flu-ms-txt">Todos</span><span class="flu-ms-seta" aria-hidden="true">▾</span></button><div class="flu-ms-pop"></div></div>
           </div>
           <div style="display:flex;gap:6px;align-items:center;margin-left:auto;">
             <button class="clear-btn" id="flu-limpa" type="button">Limpar filtros</button>
@@ -1494,27 +1608,14 @@
         </div>
         <div class="flu-ativos" id="flu-ativos"></div>
       </div>
-      <div class="vgr-kpis flu-kpis" id="flu-kpis"></div>
-      <div class="vgr-bento">
-        <div class="vgr-card vgr-span-2">
-          <div class="flu-cab"><h3>Evolução do estoque flutuante</h3><div class="flu-seg" id="flu-pergr"><button type="button" data-per="mes" class="is-on">Mensal</button><button type="button" data-per="sem">Semanal</button></div></div>
-          <p class="cap">Chips a caminho em média por dia, empilhados por grupo de produto · tom claro = período incompleto · passe o mouse para ver os números · clique numa barra para analisar o período</p>
-          <div class="vgr-legend" id="flu-leg"></div>
-          <div id="flu-evol"></div>
-        </div>
-        <div class="vgr-card">
-          <h3>Composição no período</h3>
-          <p class="cap" id="flu-comp-cap">Estoque flutuante médio por grupo · clique para filtrar</p>
-          <div id="flu-comp"></div>
-        </div>
-      </div>
-      <div class="flu-prod" id="flu-prod"></div>
+      <div class="vgr-kpis flu-kpis flu-kpis5" id="flu-kpis"></div>
       <div class="vgr-card" style="margin-bottom:8px;">
-        <div class="flu-cab"><h3>Chip a chip por filial</h3>
-          <div class="flu-seg" id="flu-chm"><button type="button" data-m="fl" class="is-on">Flutuante médio</button><button type="button" data-m="ag">A caminho agora</button><button type="button" data-m="eq">Entregues no período</button></div>
-          <button class="clear-btn copy-btn" id="flu-xls-chip" type="button" style="margin-left:auto" title="Uma linha por chip e filial, com todas as métricas">📊 Exportar Excel</button><span class="copy-status" id="flu-xls-chip-st"></span></div>
+        <div class="flu-cab"><h3>Por chip e filial</h3>
+          <div class="flu-seg" id="flu-ver" role="group" aria-label="Ver por"><button type="button" data-v="chip" class="is-on">Por chip</button><button type="button" data-v="fil">Por filial</button></div>
+          <button type="button" class="flu-lnk" id="flu-abre-todos"></button>
+          <button class="clear-btn copy-btn" id="flu-xls-chip" type="button" style="margin-left:auto" title="Uma linha por filial e chip, com todos os números">📊 Exportar Excel</button><span class="copy-status" id="flu-xls-chip-st"></span></div>
         <p class="cap" id="flu-chip-cap"></p>
-        <div class="table-scroll"><table class="flu-tbl"><thead id="flu-chip-th"></thead><tbody id="flu-chip-tb"></tbody></table></div>
+        <div class="table-scroll"><table class="flu-tbl flu-tbl5"><thead id="flu-chip-th"></thead><tbody id="flu-chip-tb"></tbody></table></div>
       </div>
       <p class="flu-nota" id="flu-nota"></p>
     </div>
@@ -2281,6 +2382,16 @@
   </div>
 </div>
 
+<div class="modal-overlay is-hidden flu" id="flu-det-modal">
+  <div class="modal-card modal-card-wide flu-det" role="dialog" aria-modal="true" aria-labelledby="flu-det-tit">
+    <div class="flu-det-cab">
+      <div><button type="button" class="flu-det-volta" id="flu-det-volta" hidden>‹ Voltar</button><h2 id="flu-det-tit"></h2><p class="modal-sub" id="flu-det-sub"></p></div>
+      <button type="button" class="flu-det-x" id="flu-det-x" aria-label="Fechar">✕</button>
+    </div>
+    <div id="flu-det-corpo"></div>
+    <div class="modal-close-row"><button class="modal-close-btn" id="flu-det-fecha" type="button">Fechar</button></div>
+  </div>
+</div>
 <div class="modal-overlay is-hidden" id="local-update-modal">
   <div class="modal-card" role="dialog" aria-modal="true" aria-labelledby="local-update-title">
     <h2 id="local-update-title">Atualizando dados</h2>
@@ -3359,240 +3470,327 @@ initFiltrosMobile("entregas");
 })();
 
 (function initEstoqueFlutuanteTab() {
+  // Estoque Flutuante (simplificada em 10-11/11): por filial × chip, no PERÍODO escolhido a venda média mensal e o flutuante médio;
+  // HOJE o estoque flutuante (em trânsito), o estoque total e os dias estimados. Fontes já presentes na página: RAW_DATA (estoque),
+  // RAW_CLIENTES (vendas mês a mês), RAW_TRANSFERENCIAS e RAW_FLUTUANTE (envios dos Correios). Clique na linha = abre os chips/filiais;
+  // o detalhe (janela) só abre pelo botão "Detalhe ›" das linhas principais.
   const raiz = document.getElementById("tab-content-estoqueflutuante"); if (!raiz) return;
   const D = RAW_FLUTUANTE && RAW_FLUTUANTE.envios ? RAW_FLUTUANTE : { meta: {}, produtos: {}, envios: [] };
   const $ = (id) => document.getElementById(id);
-  // dica ao passar o mouse (mesmo componente do BI Reabastecimento; um elemento so no body, criado na 1a vez)
+  // dica só nos cartões do topo (explica a conta)
   const tipEl = () => { let x = document.getElementById("vgr-tooltip"); if (!x) { x = document.createElement("div"); x.id = "vgr-tooltip"; x.className = "vgr-tooltip"; document.body.appendChild(x); } return x; };
   const moveTip = (ev) => { const x = document.getElementById("vgr-tooltip"); if (!x || x.style.display === "none") return; const pad = 14, rc = x.getBoundingClientRect(); let px = ev.clientX + pad, py = ev.clientY + pad;
     if (px + rc.width > window.innerWidth - 8) px = ev.clientX - rc.width - pad; if (py + rc.height > window.innerHeight - 8) py = ev.clientY - rc.height - pad; x.style.left = px + "px"; x.style.top = py + "px"; };
+  const escondeTip = () => { const x = document.getElementById("vgr-tooltip"); if (x) x.style.display = "none"; };
   const wireVgrTooltips = (root) => [...root.querySelectorAll("[data-tip]")].forEach((n) => {
     n.addEventListener("mouseenter", (ev) => { const x = tipEl(); x.innerHTML = n.dataset.tip; x.style.display = "block"; moveTip(ev); });
-    n.addEventListener("mousemove", moveTip);
-    n.addEventListener("mouseleave", () => { const x = document.getElementById("vgr-tooltip"); if (x) x.style.display = "none"; }); });
+    n.addEventListener("mousemove", moveTip); n.addEventListener("mouseleave", escondeTip); });
   const esc = (v) => String(v == null ? "" : v).split("&").join("&amp;").split("<").join("&lt;").split(">").join("&gt;").split('"').join("&quot;");
   const NUM = (v) => Math.round(v || 0).toLocaleString("pt-BR");
-  const N1 = (v) => v == null || isNaN(v) ? "—" : v.toLocaleString("pt-BR", { minimumFractionDigits: 1, maximumFractionDigits: 1 });
-  const BRL = (v) => "R$ " + Math.round(v || 0).toLocaleString("pt-BR");
   const DT = (v) => v ? String(v).slice(0, 10).split("-").reverse().join("/") : "";
-  const MS = 86400000, dnum = (d) => Math.round(Date.parse(String(d).slice(0, 10) + "T00:00:00Z") / MS), diso = (n) => new Date(n * MS).toISOString().slice(0, 10);
-  const HOJE = D.meta.hoje || TODAY_ISO_STR, H = dnum(HOJE);
+  const MS = 86400000, dnum = (d) => Math.round(Date.parse(String(d).slice(0, 10) + "T00:00:00Z") / MS);
+  const HOJE = TODAY_ISO_STR || D.meta.hoje, H = dnum(HOJE);
   const MESES = ["jan", "fev", "mar", "abr", "mai", "jun", "jul", "ago", "set", "out", "nov", "dez"];
+  const somaMes = (m, n) => { let y = +m.slice(0, 4), mm = +m.slice(5, 7) + n; while (mm > 12) { mm -= 12; y++; } while (mm < 1) { mm += 12; y--; } return y + "-" + String(mm).padStart(2, "0"); };
+  const rotMes = (m) => MESES[+m.slice(5, 7) - 1] + "/" + m.slice(2, 4);
+  const diasNoMes = (m) => new Date(Date.UTC(+m.slice(0, 4), +m.slice(5, 7), 0)).getUTCDate();
+  const MES_ATUAL = HOJE.slice(0, 7);
+  // ---- período: base da venda média, do flutuante médio e dos dias estimados (o estoque na filial, o flutuante e o total são sempre os de hoje).
+  // O rastreio dos Correios só tem histórico desde D.meta.inicio (23/04/2026): o 1º mês do filtro é o 1º mês inteiro depois disso.
+  const MES_INI = (() => { const i = String(D.meta.inicio || HOJE), m = i.slice(0, 7); return i.slice(8, 10) === "01" ? m : somaMes(m, 1); })();
+  const MESES_VER = []; for (let m = MES_ATUAL; m >= MES_INI && MESES_VER.length < 12; m = somaMes(m, -1)) MESES_VER.unshift(m);
+  const iniMes = (m) => dnum(m + "-01"), fimMes = (m) => Math.min(H, iniMes(m) + diasNoMes(m) - 1);
+  const rotFaixa = (L) => L.length === 1 ? rotMes(L[0]) : MESES[+L[0].slice(5, 7) - 1] + (L[0].slice(0, 4) !== L[L.length - 1].slice(0, 4) ? "/" + L[0].slice(2, 4) : "") + " a " + rotMes(L[L.length - 1]);
+  const fechados = MESES_VER.filter((m) => m < MES_ATUAL), PERIODOS = [];
+  if (fechados.length >= 3) PERIODOS.push({ k: "3m", meses: fechados.slice(-3), rot: "Últimos 3 meses" });
+  if (fechados.length >= 6) PERIODOS.push({ k: "6m", meses: fechados.slice(-6), rot: "Últimos 6 meses" });
+  for (const m of MESES_VER.slice().reverse()) PERIODOS.push({ k: m, meses: [m], rot: rotMes(m) + (m === MES_ATUAL ? " (até hoje)" : "") });
+  for (const p of PERIODOS) { p.a = iniMes(p.meses[0]); p.b = fimMes(p.meses[p.meses.length - 1]); p.nd = p.b - p.a + 1; p.faixa = rotFaixa(p.meses) + (p.meses.includes(MES_ATUAL) ? " até hoje" : ""); p.um = p.meses.length === 1; }
+  const PER_PADRAO = PERIODOS[0].k;
+  let PER = PERIODOS[0];
+  const rotVenda = () => PER.um ? "Venda no mês" : "Venda média mensal";
+  // chips em trânsito em média por dia na janela [a, b] (dias inclusive): soma de chips × dias a caminho dentro da janela ÷ dias da janela
+  const flutMed = (iv, a, b) => { let s = 0; for (const [x, y, q] of iv) { const ov = Math.min(y, b + 1) - Math.max(x, a); if (ov > 0) s += q * ov; } return s / (b - a + 1); };
   const GRUPO_ROT = { "CHIP COMBO": "Chip Combo / E-Sim", "CHIP E-SIM": "Chip Combo / E-Sim", "CHIP LISO": "Chip Liso", "CHIP RESGATE/PORTABILIDADE": "Chip Resgate / Portabilidade" };
   const ORDEM = ["Chip Combo / E-Sim", "Chip Liso", "Chip Resgate / Portabilidade", "Sem grupo"];
   const COR = { "Chip Combo / E-Sim": "var(--accent)", "Chip Liso": "var(--seg-7)", "Chip Resgate / Portabilidade": "var(--seg-3)", "Sem grupo": "var(--text-faint)" };
   const grupoDe = (p) => GRUPO_ROT[String((D.produtos[p] || [])[0] || "").toUpperCase()] || "Sem grupo";
   const operadoraDe = (p) => String((D.produtos[p] || [])[1] || String(p).split(" ")[0] || "").toUpperCase();
-  const E = D.envios.map((e) => ({ ...e, a: dnum(e.ini), b: e.fim ? dnum(e.fim) : H + 1, aberto: !e.fim && !e.ent, t: e.ent ? dnum(e.ent) - dnum(e.ini) : null }));
-  const INI = E.length ? Math.max(dnum(D.meta.inicio || E.map((e) => e.ini).sort()[0]), Math.min(...E.map((e) => e.a))) : H;
-  const st = { per: "mes", sel: "", fil: [], tipo: [], op: "", chm: "fl" };
-  const MULTI = ["fil", "tipo"];
-  const valoresDe = (k) => MULTI.includes(k) ? st[k] : (st[k] ? [st[k]] : []);
-  const grupoTemSel = (g) => !st.tipo.length || st.tipo.some((t) => t.charAt(0) === "g" ? t.slice(2) === g : grupoDe(t.slice(2)) === g);
+  // chip = marcado como chip no estoque do BI ou presente no cadastro de produtos do rastreio (serviços como Controle/Pós ficam fora)
+  const CHIPS = new Set(Object.keys(D.produtos || {})); for (const r of RAW_DATA || []) if (r.TipoChip) CHIPS.add(r.Produto);
+  const ehChip = (p) => CHIPS.has(p);
+  // filial: sempre a sigla usada no resto do BI (NE, BA, SPI...), pelo código da empresa
+  const SIGLA = {};
+  const poe = (cod, nome) => { cod = String(cod); if (nome && !SIGLA[cod]) SIGLA[cod] = empresaAbrev(nome); };
+  for (const r of RAW_DATA || []) poe(r.CodEmpresa, r.Empresa);
+  for (const t of RAW_TRANSFERENCIAS || []) { poe(t.CodEmpresaOrigem, t.EmpresaOrigem); poe(t.CodEmpresaDestino, t.EmpresaDestino); }
+  for (const c of RAW_CLIENTES || []) poe(c.CodEmpresa, c.Empresa);
+  const sigla = (cod) => SIGLA[String(cod)] || String(cod);
+  // só as filiais do usuário (as do estoque que a página recebe): no BI com login, a transferência vem quando a origem OU o destino é dele,
+  // e a outra ponta não pode virar linha na aba
+  const EMP = new Set((RAW_DATA || []).map((r) => String(r.CodEmpresa))), dele = (cod) => !EMP.size || EMP.has(String(cod));
 
-  // ---- recorte de produto (filtro Produto + Operadora)
-  const vale = (p) => (!st.tipo.length || st.tipo.some((t) => t.charAt(0) === "g" ? grupoDe(p) === t.slice(2) : p === t.slice(2))) && (!st.op || operadoraDe(p) === st.op);
-  const chips = (e) => { let t = 0; for (const p in e.p) if (vale(p)) t += e.p[p]; return t; };
-  const valor = (e) => { let t = 0; for (const p in e.pv || {}) if (vale(p)) t += e.pv[p]; return t; };
-  const chipsG = (g) => (e) => { let t = 0; for (const p in e.p) if (vale(p) && grupoDe(p) === g) t += e.p[p]; return t; };
-  const valorG = (g) => (e) => { let t = 0; for (const p in e.pv || {}) if (vale(p) && grupoDe(p) === g) t += e.pv[p]; return t; };
-  // versoes que ignoram o filtro de produto (so a operadora vale): para listar todos os itens nos cartoes e na composicao
-  const valeOp = (p) => !st.op || operadoraDe(p) === st.op;
-  const prodSel = (p) => !st.tipo.length || st.tipo.some((t) => t.charAt(0) === "g" ? grupoDe(p) === t.slice(2) : p === t.slice(2));
-  const chipsP0 = (prod) => (e) => valeOp(prod) ? (e.p[prod] || 0) : 0;
-  const valorP0 = (prod) => (e) => valeOp(prod) ? ((e.pv || {})[prod] || 0) : 0;
-  const chipsG0 = (g) => (e) => { let t = 0; for (const p in e.p) if (valeOp(p) && grupoDe(p) === g) t += e.p[p]; return t; };
-  const valorG0 = (g) => (e) => { let t = 0; for (const p in e.pv || {}) if (valeOp(p) && grupoDe(p) === g) t += e.pv[p]; return t; };
-  // ---- recorte de filial (sem = "fil": filtro de filial ignorado, para listar todas as filiais)
-  const recorte = (sem) => E.filter((e) => sem === "fil" || !st.fil.length || st.fil.includes(e.fil));
-  // ---- periodos (mes ou semana de segunda a domingo), de INI a hoje
-  function periodos(per) {
-    const out = [];
-    if (per === "mes") {
-      let y = +diso(INI).slice(0, 4), m = +diso(INI).slice(5, 7);
-      for (;;) { const k = y + "-" + String(m).padStart(2, "0"), a0 = dnum(k + "-01"); if (a0 > H) break;
-        const fimM = dnum(new Date(Date.UTC(y, m, 0)).toISOString()), a = Math.max(a0, INI), b = Math.min(fimM, H);
-        out.push({ k, rot: MESES[m - 1] + "/" + String(y).slice(2), longo: MESES[m - 1] + "/" + y, a, b, parcial: b < fimM || a > a0 }); m++; if (m > 12) { m = 1; y++; } }
-    } else {
-      const s0 = INI - ((new Date(INI * MS).getUTCDay() + 6) % 7);
-      for (let s = s0; s <= H; s += 7) { const a = Math.max(s, INI), b = Math.min(s + 6, H); out.push({ k: diso(s), rot: DT(diso(s)).slice(0, 5), longo: "semana de " + DT(diso(s)).slice(0, 5) + " a " + DT(diso(s + 6)).slice(0, 5), a, b, parcial: b < s + 6 || a > s }); }
+  // ---- um item por filial × chip
+  const IT = new Map();
+  const item = (cod, p) => { const k = String(cod) + "|" + p; let x = IT.get(k);
+    if (!x) { x = { k, cod: String(cod), fil: sigla(cod), p, op: operadoraDe(p), g: grupoDe(p), est: 0, vm: {}, cheg: [], cli: [], par: [], sai: [], iv: [] }; IT.set(k, x); } return x; };
+  for (const r of RAW_DATA || []) if (ehChip(r.Produto)) item(r.CodEmpresa, r.Produto).est += +r.EstoqueAtual || 0;
+  for (const c of RAW_CLIENTES || []) for (const d of c.Detalhe || []) { if (!ehChip(d.Produto) || d.AnoMes < MESES_VER[0]) continue;
+    const x = item(c.CodEmpresa, d.Produto); x.vm[d.AnoMes] = (x.vm[d.AnoMes] || 0) + (+d.Qte || 0); }
+  // transferência sem aceite: chegando na filial de destino (conta lá) e, só para informação, saindo da origem
+  for (const t of RAW_TRANSFERENCIAS || []) { if (t.AceiteDado === true || t.DataAceite || !ehChip(t.Produto) || !(+t.Qte)) continue;
+    const o = { data: String(t.Data).slice(0, 10), de: sigla(t.CodEmpresaOrigem), para: sigla(t.CodEmpresaDestino), p: t.Produto, q: +t.Qte };
+    if (dele(t.CodEmpresaDestino)) item(t.CodEmpresaDestino, t.Produto).cheg.push(o); if (dele(t.CodEmpresaOrigem)) item(t.CodEmpresaOrigem, t.Produto).sai.push(o); }
+  // envio ainda não entregue: a caminho do cliente (conta na filial que enviou) ou com o rastreio parado (fora da conta)
+  for (const e of D.envios) { if (e.ent || !e.sit) continue;
+    for (const p in e.p) { if (!ehChip(p) || !e.p[p]) continue;
+      const o = { ini: e.ini, sit: e.sit, pos: e.pos || "", ult: e.ult || "", cod: e.cod || "", p, q: e.p[p] }; const x = item(e.CodEmpresa, p); (e.des ? x.par : x.cli).push(o); } }
+  // intervalos em trânsito, para o flutuante médio do período ([início, fim) em dias): envio = do pedido até a véspera da entrega
+  // (aberto e em dia: até hoje; parado, devolvido ou expirado: até o último evento), conta na filial que enviou; transferência = do dia
+  // da transferência até a véspera do aceite (sem aceite: até hoje), conta na filial que recebe
+  for (const e of D.envios) { const a = dnum(e.ini), b = e.fim ? dnum(e.fim) : H + 1; if (b <= a) continue;
+    for (const p in e.p) if (ehChip(p) && e.p[p]) item(e.CodEmpresa, p).iv.push([a, b, e.p[p]]); }
+  for (const t of RAW_TRANSFERENCIAS || []) { if (!ehChip(t.Produto) || !(+t.Qte)) continue;
+    const a = dnum(t.Data), b = t.DataAceite ? dnum(t.DataAceite) : t.AceiteDado === true ? a : H + 1; if (b > a && dele(t.CodEmpresaDestino)) item(t.CodEmpresaDestino, t.Produto).iv.push([a, b, +t.Qte]); }
+  const qtd = (L) => L.reduce((t, o) => t + o.q, 0);
+  for (const x of IT.values()) { x.qCheg = qtd(x.cheg); x.qCli = qtd(x.cli); x.qPar = qtd(x.par); x.qSai = qtd(x.sai); }
+  const A0 = iniMes(MESES_VER[0]);
+  const vis = (x) => x.est || x.qCheg || x.qCli || x.qPar || MESES_VER.some((m) => x.vm[m]) || x.iv.some((v) => v[1] > A0);
+  const ITENS = [...IT.values()].filter(vis);
+  // soma de vários itens no período PER (as listas também se juntam, para o detalhe)
+  function juntar(L, P = PER) {
+    const t = { n: L.length, est: 0, qCheg: 0, qCli: 0, qPar: 0, flm: 0, vm: {}, cheg: [], cli: [], par: [], sai: [], fils: new Set(), prods: new Set() };
+    for (const x of L) { t.est += x.est; t.qCheg += x.qCheg; t.qCli += x.qCli; t.qPar += x.qPar; t.flm += flutMed(x.iv, P.a, P.b); t.fils.add(x.fil); t.prods.add(x.p);
+      for (const m in x.vm) t.vm[m] = (t.vm[m] || 0) + x.vm[m]; t.cheg.push(...x.cheg); t.cli.push(...x.cli); t.par.push(...x.par); t.sai.push(...x.sai); }
+    t.sai = t.sai.filter((o) => !t.fils.has(o.para) || !t.prods.has(o.p));   // saindo para filial fora da seleção (dentro dela já conta como chegando)
+    t.flut = t.qCheg + t.qCli; t.total = t.est + t.flut;
+    t.vend = P.meses.reduce((s, m) => s + (t.vm[m] || 0), 0); t.media = t.vend / P.meses.length;
+    t.dia = t.vend / P.nd; t.dias = t.dia > 0 ? t.total / t.dia : null;   // venda por dia no período (o mês atual conta até hoje)
+    return t;
+  }
+
+  // ---- filtros de seleção múltipla (Filial, Operadora, Produto): cada marcação vale na hora, inclusive na tabela e no detalhe
+  const st = { per: PER_PADRAO, fil: [], op: [], prod: [], ver: "chip", abertos: new Set() };
+  const MULTI = ["fil", "op", "prod"];
+  const recorte = () => ITENS.filter((x) => (!st.fil.length || st.fil.includes(x.fil)) && (!st.op.length || st.op.includes(x.op)) && (!st.prod.length || st.prod.includes(x.p)));
+  const unicos = (f) => [...new Set(ITENS.map(f))].filter(Boolean).sort((a, b) => a.localeCompare(b, "pt-BR"));
+  const universo = { fil: unicos((x) => x.fil), op: unicos((x) => x.op), prod: unicos((x) => x.p) };
+  const prodsDoFiltro = () => universo.prod.filter((p) => !st.op.length || st.op.includes(operadoraDe(p)));
+  const prodsDoGrupo = (g) => prodsDoFiltro().filter((p) => grupoDe(p) === g);
+  const marcaGrupo = (g, on) => { const ps = prodsDoGrupo(g); st.prod = on ? st.prod.concat(ps.filter((p) => !st.prod.includes(p))) : st.prod.filter((p) => !ps.includes(p)); };
+  const FILTROS = {
+    fil: { todos: "Todas", varios: "filiais", lista: () => universo.fil },
+    op: { todos: "Todas", varios: "operadoras", lista: () => universo.op },
+    prod: { todos: "Todos", varios: "produtos", lista: prodsDoFiltro, grupos: true, busca: true },
+  };
+  const caixaDe = (k) => raiz.querySelector('.flu-ms[data-k="' + k + '"]');
+  let msAberto = null;
+  function msResumo(k) { const d = FILTROS[k], vs = st[k]; if (!vs.length) return d.todos; const t = vs.join(", "); return vs.length === 1 || t.length <= 24 ? t : vs.length + " " + d.varios; }
+  function msLista(k) {
+    const d = FILTROS[k], vals = d.lista();
+    const caixa = (v) => '<label class="flu-ms-op"><input type="checkbox" data-v="' + esc(v) + '"' + (st[k].includes(v) ? " checked" : "") + "><span>" + esc(v) + "</span></label>";
+    if (!vals.length) return '<div class="flu-ms-vazio">Nada para escolher.</div>';
+    if (!d.grupos) return vals.map(caixa).join("");
+    return ORDEM.filter((g) => vals.some((p) => grupoDe(p) === g)).map((g) => { const ps = vals.filter((p) => grupoDe(p) === g), n = ps.filter((p) => st[k].includes(p)).length;
+      return '<label class="flu-ms-op flu-ms-grp"><input type="checkbox" data-g="' + esc(g) + '"' + (n === ps.length ? " checked" : "") + (n && n < ps.length ? ' data-meio="1"' : "") + '><span><i class="sw" style="background:' + COR[g] + '"></i>' + esc(g) + " (todos)</span></label>" + ps.map(caixa).join(""); }).join("");
+  }
+  function msBusca(box) { const b = box.querySelector(".flu-ms-busca"); if (!b) return; const q = b.value.trim().toLowerCase();
+    box.querySelectorAll(".flu-ms-op").forEach((o) => { o.style.display = !q || (!o.classList.contains("flu-ms-grp") && o.textContent.toLowerCase().includes(q)) ? "" : "none"; }); }
+  function msPinta(k) {
+    const box = caixaDe(k), lista = box && box.querySelector(".flu-ms-lista"); if (!lista) return;
+    box.querySelector(".flu-ms-txt").textContent = msResumo(k); box.classList.toggle("tem-sel", st[k].length > 0);
+    box.querySelector(".flu-ms-btn").title = st[k].length > 1 ? st[k].join(", ") : "";
+    const rolagem = lista.scrollTop, foco = lista.contains(document.activeElement) ? document.activeElement : null, chave = foco ? [foco.dataset.v, foco.dataset.g] : null;
+    lista.innerHTML = msLista(k); lista.scrollTop = rolagem;
+    lista.querySelectorAll("input[data-meio]").forEach((i) => { i.indeterminate = true; });
+    msBusca(box);
+    if (chave) { const n = [...lista.querySelectorAll("input")].find((i) => i.dataset.v === chave[0] && i.dataset.g === chave[1]); if (n) n.focus(); }
+  }
+  function msFecha() { if (!msAberto) return; const box = caixaDe(msAberto); box.classList.remove("is-aberto"); box.querySelector(".flu-ms-btn").setAttribute("aria-expanded", "false"); msAberto = null; }
+  function msAbre(k) {
+    msFecha(); const box = caixaDe(k), pop = box.querySelector(".flu-ms-pop"), b = box.querySelector(".flu-ms-busca");
+    box.classList.add("is-aberto"); box.querySelector(".flu-ms-btn").setAttribute("aria-expanded", "true"); msAberto = k;
+    if (b) b.value = ""; msPinta(k);
+    pop.style.left = ""; pop.style.right = ""; if (pop.getBoundingClientRect().right > document.documentElement.clientWidth - 8) { pop.style.left = "auto"; pop.style.right = "0"; }
+  }
+  function msMonta() {
+    for (const k of MULTI) {
+      const box = caixaDe(k), d = FILTROS[k], nome = box.querySelector("label").textContent;
+      box.querySelector(".flu-ms-pop").innerHTML = (d.busca ? '<input type="search" class="flu-ms-busca" placeholder="Buscar…" aria-label="Buscar em ' + esc(nome) + '">' : "")
+        + '<div class="flu-ms-lista' + (d.grupos ? " tem-grupos" : "") + '" role="group" aria-label="' + esc(nome) + '"></div>'
+        + '<div class="flu-ms-pe"><button type="button" data-ms="limpa">Limpar</button><button type="button" data-ms="fecha">Fechar</button></div>';
+      box.querySelector(".flu-ms-btn").onclick = () => { if (msAberto === k) msFecha(); else msAbre(k); };
+      box.querySelector(".flu-ms-lista").onchange = (ev) => { const i = ev.target;
+        if (i.dataset.g != null) marcaGrupo(i.dataset.g, i.checked); else st[k] = i.checked ? st[k].concat([i.dataset.v]) : st[k].filter((v) => v !== i.dataset.v);
+        render(); };
+      box.querySelector(".flu-ms-pe").onclick = (ev) => { const b = ev.target.closest("button"); if (!b) return;
+        if (b.dataset.ms === "limpa") { st[k] = []; render(); } else { msFecha(); box.querySelector(".flu-ms-btn").focus(); } };
+      const busca = box.querySelector(".flu-ms-busca"); if (busca) busca.oninput = () => msBusca(box);
     }
-    return out;
+    document.addEventListener("mousedown", (ev) => { if (msAberto && !caixaDe(msAberto).contains(ev.target)) msFecha(); });
   }
-  const janela = () => { if (st.sel) { const p = periodos(st.per).find((x) => x.k === st.sel); if (p) return p; } return { k: "", rot: "todo o período", longo: "todo o período (desde " + DT(diso(INI)) + ")", a: INI, b: H, parcial: false }; };
-  // ---- metricas de um conjunto de envios numa janela [a, b] (dias inclusive)
-  function met(L, a, b, w = chips, wv = valor) {
-    const nd = Math.max(1, b - a + 1); let fl = 0, flv = 0, eq = 0, ne = 0, tw = 0, tq = 0;
-    for (const e of L) { const q = w(e); if (!q) continue; const ov = Math.max(0, Math.min(e.b, b + 1) - Math.max(e.a, a)); if (ov) { fl += q * ov; flv += wv(e) * ov; }
-      if (e.ent) { const de = dnum(e.ent); if (de >= a && de <= b) { eq += q; ne++; if (e.t != null && e.t >= 0) { tw += e.t * q; tq += q; } } } }
-    return { fl: fl / nd, flv: flv / nd, dem: eq / nd, eq, ne, rep: tq ? tw / tq : null, nd };
-  }
-  const agora = (L, w = chips, wv = valor) => { const A = L.filter((e) => e.aberto && w(e) > 0); return { A, n: A.length, q: A.reduce((t, e) => t + w(e), 0), v: A.reduce((t, e) => t + wv(e), 0) }; };
-  const grupos = (L) => ORDEM.filter((g) => L.some((e) => chipsG(g)(e) > 0));
 
-  // ---- filtros
-  function opts(sel, vals, rot, todos) { const v0 = sel.value; sel.innerHTML = '<option value="">' + todos + "</option>" + vals.map((v) => '<option value="' + esc(v) + '">' + esc(rot ? rot(v) : v) + "</option>").join(""); sel.value = vals.includes(v0) ? v0 : ""; }
-  function montaFiltros() {
-    const per = periodos(st.per).slice().reverse();
-    $("flu-per").innerHTML = '<option value="">Todo o período</option>' + per.map((p) => '<option value="' + p.k + '">' + esc((st.per === "mes" ? p.longo : p.longo) + (p.parcial ? " (parcial)" : "")) + "</option>").join("");
-    $("flu-per").value = st.sel;
-    opts($("flu-fil"), [...new Set(E.map((e) => e.fil).filter(Boolean))].sort(), null, "Todas");
-    const soma = new Map(); for (const e of E) for (const p in e.p) soma.set(p, (soma.get(p) || 0) + e.p[p]);
-    const porG = new Map(); for (const [p, q] of soma) { const g = grupoDe(p); (porG.get(g) || porG.set(g, []).get(g)).push([p, q]); }
-    $("flu-tipo").innerHTML = '<option value="">Todos</option>' + ORDEM.filter((g) => porG.has(g)).map((g) => '<optgroup label="' + esc(g) + '"><option value="g:' + esc(g) + '">' + esc(g) + " (todos)</option>"
-      + porG.get(g).sort((a, b) => b[1] - a[1]).map(([p]) => '<option value="p:' + esc(p) + '">' + esc(p) + "</option>").join("") + "</optgroup>").join("");
-    sincroniza();
-    opts($("flu-op"), [...new Set([...soma.keys()].map(operadoraDe).filter(Boolean))].sort(), null, "Todas");
-  }
-  const ROT_F = { sel: "Período", fil: "Filial", tipo: "Produto", op: "Operadora" };
+  // ---- período (lista) e faixa "Filtrando por"
+  const ROT_F = { per: "Período", fil: "Filial", op: "Operadora", prod: "Produto" };
+  const temFiltro = () => st.fil.length || st.op.length || st.prod.length;
+  const rotTotal = () => temFiltro() ? "Total do filtro" : "Total";
+  const limpa = () => { MULTI.forEach((k) => st[k] = []); st.per = PER_PADRAO; render(); };
+  const montaPeriodo = () => { $("flu-per").innerHTML = PERIODOS.map((p) => '<option value="' + p.k + '">' + esc(p.rot + (p.um ? "" : " (" + rotFaixa(p.meses) + ")")) + "</option>").join(""); };
   function ativos() {
-    const W = janela(), itens = Object.keys(ROT_F).flatMap((k) => valoresDe(k).map((v) => [k, v]));
-    $("flu-ativos").innerHTML = itens.length ? '<span style="color:var(--text-muted);font-weight:600;align-self:center">Filtrando por:</span>' + itens.map(([k, v]) => '<button type="button" data-k="' + k + '" data-v="' + esc(v) + '" title="Tirar este item">' + esc(ROT_F[k] + ": " + (k === "sel" ? W.longo : k === "tipo" ? v.slice(2) : v)) + " ✕</button>").join("")
+    const itens = (st.per !== PER_PADRAO ? [["per", st.per]] : []).concat(MULTI.flatMap((k) => st[k].map((v) => [k, v])));
+    $("flu-ativos").innerHTML = itens.length ? '<span style="color:var(--text-muted);font-weight:600;align-self:center">Filtrando por:</span>' + itens.map(([k, v]) => '<button type="button" data-k="' + k + '" data-v="' + esc(v) + '" title="Tirar este item">' + esc(ROT_F[k] + ": " + (k === "per" ? PER.rot : v)) + " ×</button>").join("")
       + (itens.length > 1 ? '<button type="button" data-todos="1" style="background:none;color:var(--text-muted);text-decoration:underline">limpar tudo</button>' : "") : "";
-    $("flu-ativos").querySelectorAll("button").forEach((b) => b.onclick = () => { if (b.dataset.todos) { $("flu-limpa").click(); return; } const k = b.dataset.k;
-      if (MULTI.includes(k)) st[k] = st[k].filter((x) => x !== b.dataset.v); else st[k] = ""; sincroniza(); render(); });
+    $("flu-ativos").querySelectorAll("button").forEach((b) => b.onclick = () => { if (b.dataset.todos) { limpa(); return; }
+      if (b.dataset.k === "per") st.per = PER_PADRAO; else st[b.dataset.k] = st[b.dataset.k].filter((x) => x !== b.dataset.v); render(); });
   }
-  // select de filtro com varios itens: mostra o item (1) ou "N selecionados" (mais de 1)
-  function sincroniza() {
-    $("flu-per").value = st.sel; $("flu-op").value = st.op;
-    [["flu-fil", "fil"], ["flu-tipo", "tipo"]].forEach(([id, k]) => { const sel = $(id), vs = st[k], velho = sel.querySelector("option[data-varios]"); if (velho) velho.remove();
-      if (vs.length > 1) { const o = document.createElement("option"); o.value = "__varios"; o.dataset.varios = "1"; o.textContent = vs.length + " selecionados"; sel.insertBefore(o, sel.firstElementChild ? sel.firstElementChild.nextSibling : null); sel.value = "__varios"; }
-      else sel.value = vs[0] || ""; });
-  }
-  // clique nos graficos: soma ou tira o item (periodo e operadora continuam com um valor so)
-  const alterna = (k, v) => { if (MULTI.includes(k)) st[k] = st[k].includes(v) ? st[k].filter((x) => x !== v) : st[k].concat([v]); else st[k] = st[k] === v ? "" : v; sincroniza(); render(); };
+  // o botão "Detalhe ›" leva data-det (índice em DET, refeito a cada desenho)
+  let DET = [];
+  const detA = (L, titulo) => ' data-det="' + (DET.push({ L, titulo }) - 1) + '"';
+  const sem = '<span class="sem">—</span>';
+  const N0 = (v) => v >= 0.5 ? NUM(v) : sem;
+  const fmtDias = (t) => t.dias == null ? (t.total > 0 ? '<span class="sem">sem venda</span>' : sem) : NUM(t.dias) + (Math.round(t.dias) === 1 ? " dia" : " dias");
+  const partesFlut = (t) => [t.qCheg ? NUM(t.qCheg) + " chegando" : "", t.qCli ? NUM(t.qCli) + " p/ clientes" : ""].filter(Boolean).join(" · ");
 
-  // ---- KPIs
-  function kpis(R, W) {
-    const M = met(R, W.a, W.b), A = agora(R), lim = Math.max(1, Math.round(M.rep == null ? 7 : M.rep)), par = A.A.filter((e) => H - e.a > lim), parQ = par.reduce((t, e) => t + chips(e), 0);
-    const des = R.filter((e) => e.des && !e.ent && chips(e) > 0), desQ = des.reduce((t, e) => t + chips(e), 0);
-    const card = (eyebrow, valorTxt, sub, clic, dica) => '<div class="vgr-kpi' + (clic ? " is-clic" : "") + '"' + (clic ? ' data-acao="' + clic + '"' : "") + (dica ? ' data-tip="' + esc(dica) + '"' : "") + '><span class="eyebrow">' + esc(eyebrow) + '</span><span class="value">' + esc(valorTxt) + '</span><span class="sub">' + esc(sub) + "</span></div>";
+  // ---- cartões do topo: os 2 primeiros seguem o período; os outros 3 são de hoje
+  function kpis(R) {
+    const t = juntar(R);
+    const card = (eyebrow, valorTxt, sub, dica) => '<div class="vgr-kpi" data-tip="' + esc(dica) + '"><span class="eyebrow">' + eyebrow + '</span><span class="value">' + valorTxt + '</span><span class="sub">' + sub + "</span></div>";
+    const hoje = ' <span class="flu-quando">hoje</span>', noPer = ' <span class="flu-quando is-per">período</span>';
     $("flu-kpis").innerHTML = [
-      card("A caminho agora", NUM(A.q) + " chips", A.n + (A.n === 1 ? " envio" : " envios") + " · " + BRL(A.v) + (desQ ? " · fora isso, " + NUM(desQ) + " chips em " + des.length + " envios sem atualização dos Correios" : ""), "", "Chips em envios ainda não entregues, com o rastreio dos Correios em dia. Envios cujo rastreio não é consultado há 2 dias ou mais ficam de fora (situação desconhecida)"),
-      card("Estoque flutuante médio", NUM(M.fl) + " chips", BRL(M.flv) + " em média · " + W.rot, "", "Chips a caminho em média por dia no período: soma de (chips × dias a caminho dentro do período) ÷ dias do período"),
-      card("Demanda entregue", NUM(M.dem) + " chips/dia", NUM(M.eq) + " chips em " + M.ne + " entregas · " + M.nd + " dias", "", "Chips entregues aos clientes por dia no período"),
-      card("Tempo de reposição", M.rep == null ? "—" : N1(M.rep) + " dias", "do pedido no Mira à entrega, ponderado por chips", "", "Quanto tempo, em média, um chip leva do pedido até chegar ao cliente (entregas do período)"),
-      card("Acima do tempo de reposição", NUM(parQ) + " chips", par.length + (par.length === 1 ? " envio" : " envios") + " a caminho há mais de " + lim + (lim === 1 ? " dia" : " dias") + " desde o pedido", "", "Envios ainda a caminho há mais dias que o tempo médio de reposição do período (" + lim + " dias)"),
+      card(esc(rotVenda()) + noPer, NUM(t.media) + " chips", esc((PER.um ? "vendidos em " : "por mês, média de ") + PER.faixa), "Chips vendidos " + (PER.um ? "no mês" : "por mês, em média,") + " em " + PER.faixa),
+      card("Flutuante médio" + noPer, NUM(t.flm) + " chips", esc("em trânsito, em média por dia · " + PER.faixa), "Chips em trânsito em média por dia no período: transferências entre filiais (até o aceite) + envios aos clientes (até a entrega). Soma de chips × dias a caminho ÷ dias do período."),
+      card("Estoque flutuante" + hoje, NUM(t.flut) + " chips", esc(NUM(t.qCheg) + " chegando de outras filiais · " + NUM(t.qCli) + " a caminho dos clientes") + (t.qPar ? ' · <span class="flu-kpi-parado">fora isso, ' + NUM(t.qPar) + " com rastreio parado</span>" : ""),
+        "Chips em trânsito agora: transferências ainda sem aceite + envios dos Correios ainda não entregues. Envios com o rastreio parado ficam fora da conta."),
+      card("Estoque total" + hoje, NUM(t.total) + " chips", esc(NUM(t.est) + " na filial + " + NUM(t.flut) + " flutuante"), "Estoque na filial + estoque flutuante"),
+      card("Dias estimados", t.dias == null ? "—" : NUM(t.dias) + " dias", t.dia > 0 ? esc("estoque total ÷ venda de " + NUM(t.dia) + " chips/dia (" + PER.faixa + ")") : "sem venda no período", "Por quantos dias o estoque total de hoje dura se a venda continuar no ritmo do período"),
     ].join("");
     wireVgrTooltips($("flu-kpis"));
   }
 
-  // ---- evolucao (barras empilhadas por grupo)
-  function evolucao(R) {
-    const P = periodos(st.per), G = grupos(R), W = 900, Hh = 210, pt = 18, pb = 22, pl = 44, pr = 8, ph = Hh - pt - pb, pw = W - pl - pr;
-    const dados = P.map((p) => { const por = {}; let tot = 0; for (const g of G) { por[g] = met(R, p.a, p.b, chipsG(g), valorG(g)).fl; tot += por[g]; } const m = met(R, p.a, p.b); return { p, por, tot, m }; });
-    $("flu-leg").innerHTML = G.map((g) => '<span style="cursor:pointer" data-g="' + esc(g) + '"><span class="sw" style="background:' + COR[g] + '"></span>' + esc(g) + "</span>").join("");
-    $("flu-leg").querySelectorAll("[data-g]").forEach((x) => x.onclick = () => alterna("tipo", "g:" + x.dataset.g));
-    if (!dados.length || !dados.some((d) => d.tot > 0)) { $("flu-evol").innerHTML = '<div class="vgr-empty">Sem envios no recorte.</div>'; return; }
-    const max = Math.max(1, ...dados.map((d) => d.tot)), y = (v) => pt + ph - v / max * ph, slot = pw / dados.length, bw = Math.max(5, Math.min(54, slot * 0.62)), cada = Math.max(1, Math.ceil(dados.length / 16));
-    let svg = "";
-    for (const fr of [0, 0.5, 1]) { const v = max * fr; svg += '<line x1="' + pl + '" x2="' + (W - pr) + '" y1="' + y(v).toFixed(1) + '" y2="' + y(v).toFixed(1) + '" style="stroke:var(--border)"></line><text x="' + (pl - 6) + '" y="' + (y(v) + 3).toFixed(1) + '" text-anchor="end" style="font-size:9.5px;fill:var(--text-muted)">' + NUM(v) + "</text>"; }
-    dados.forEach((d, i) => {
-      const x = pl + i * slot + (slot - bw) / 2, op = st.sel && st.sel !== d.p.k ? 0.25 : d.p.parcial ? 0.5 : 1; let base = 0;
-      for (const g of G) { const v = d.por[g]; if (v > 0) { svg += '<rect x="' + x.toFixed(1) + '" y="' + y(base + v).toFixed(1) + '" width="' + bw.toFixed(1) + '" height="' + Math.max(0.5, y(base) - y(base + v)).toFixed(1) + '" style="fill:' + COR[g] + ';opacity:' + op + '"></rect>'; base += v; } }
-      if (bw >= 26 && d.tot > 0) svg += '<text x="' + (x + bw / 2).toFixed(1) + '" y="' + (y(d.tot) - 4).toFixed(1) + '" text-anchor="middle" style="font-size:9.5px;font-weight:700;fill:var(--text);opacity:' + Math.max(op, 0.6) + '">' + NUM(d.tot) + "</text>";
-      if (i % cada === 0 || st.sel === d.p.k) svg += '<text x="' + (x + bw / 2).toFixed(1) + '" y="' + (Hh - 6) + '" text-anchor="middle" style="font-size:9.5px;' + (st.sel === d.p.k ? "fill:var(--text);font-weight:700" : "fill:var(--text-muted)") + '">' + esc(d.p.rot) + "</text>";
-      const tip = "<b>" + esc(d.p.longo) + "</b>" + (d.p.parcial ? " <span style='opacity:.7'>(parcial)</span>" : "") + "<br>Estoque flutuante médio: <b>" + NUM(d.tot) + " chips</b> · " + BRL(d.m.flv)
-        + G.map((g) => "<br><span style='color:" + COR[g] + "'>■</span> " + esc(g) + ": " + NUM(d.por[g])).join("") + "<br>Demanda: " + NUM(d.m.dem) + " chips/dia · " + NUM(d.m.eq) + " chips entregues"
-        + "<br>Tempo de reposição: " + (d.m.rep == null ? "—" : N1(d.m.rep) + " dias");
-      svg += '<rect class="hit" data-k="' + d.p.k + '" data-tip="' + esc(tip) + '" x="' + (pl + i * slot).toFixed(1) + '" y="' + pt + '" width="' + slot.toFixed(1) + '" height="' + (ph + pb) + '" style="fill:transparent"></rect>';
-    });
-    $("flu-evol").innerHTML = '<svg viewBox="0 0 ' + W + " " + Hh + '" style="width:100%;height:auto;display:block">' + svg + "</svg>";
-    $("flu-evol").querySelectorAll("rect.hit").forEach((r) => r.onclick = () => alterna("sel", r.dataset.k));
-    wireVgrTooltips($("flu-evol"));
+  // ---- tabela: por chip (abre as filiais) ou por filial (abre os chips); todas as linhas com a mesma altura, um número por célula.
+  // Clique na linha principal = abre/fecha; só as linhas principais (e o total) têm o botão "Detalhe ›"
+  let ultimas = [];
+  function tabela(R) {
+    const porChip = st.ver === "chip", chave = porChip ? (x) => x.p : (x) => x.fil, filho = porChip ? (x) => x.fil : (x) => x.p;
+    const grupos = new Map(); for (const x of R) { const k = chave(x); (grupos.get(k) || grupos.set(k, []).get(k)).push(x); }
+    const linhas = [...grupos].map(([k, L]) => ({ k, L, t: juntar(L), g: porChip ? grupoDe(k) : "" }));
+    linhas.sort((a, b) => (porChip ? ORDEM.indexOf(a.g) - ORDEM.indexOf(b.g) : 0) || b.t.media - a.t.media || b.t.total - a.t.total || a.k.localeCompare(b.k, "pt-BR"));
+    ultimas = linhas;
+    const cel = (t) => '<td class="num g-ini">' + N0(t.media) + '</td><td class="num">' + N0(t.flm) + '</td><td class="num g-ini">' + (t.flut ? NUM(t.flut) : sem) + '</td><td class="num">' + NUM(t.total) + '</td><td class="num">' + fmtDias(t) + "</td>";
+    const btn = (L, tit) => '<td class="flu-det-td"><button type="button" class="flu-det-btn"' + detA(L, tit) + ' aria-label="Detalhe de ' + esc(tit) + '">Detalhe ›</button></td>';
+    const nome = (n, s, p) => n + " " + (n === 1 ? s : p);
+    let html = "", gAtual = null;
+    for (const ln of linhas) {
+      if (porChip && ln.g !== gAtual) { gAtual = ln.g; html += '<tr class="flu-grp"><td colspan="7"><i class="sw" style="background:' + COR[ln.g] + '"></i>' + esc(ln.g) + "</td></tr>"; }
+      const ab = st.abertos.has(st.ver + ":" + ln.k), nf = ln.L.length;
+      const tit = ln.k + " · " + (nf === 1 ? filho(ln.L[0]) : porChip ? "todas as filiais" + (st.fil.length ? " do filtro" : "") : "todos os chips" + (st.prod.length || st.op.length ? " do filtro" : ""));
+      html += '<tr class="flu-pai" data-abre="' + esc(ln.k) + '" tabindex="0" aria-expanded="' + ab + '"><td class="nome"><span class="flu-seta" aria-hidden="true">' + (ab ? "▾" : "▸") + "</span>" + esc(ln.k)
+        + "<small>" + nome(nf, porChip ? "filial" : "chip", porChip ? "filiais" : "chips") + "</small></td>" + cel(ln.t) + btn(ln.L, tit) + "</tr>";
+      if (ab) for (const [x, u] of ln.L.map((x) => [x, juntar([x])]).sort((a, b) => b[1].media - a[1].media || b[0].est - a[0].est)) html += '<tr class="flu-filho"><td class="nome">' + esc(filho(x)) + "</td>" + cel(u) + '<td class="flu-det-td"></td></tr>';
+    }
+    html += linhas.length ? '<tr class="is-tot"><td class="nome">' + rotTotal() + "</td>" + cel(juntar(R)) + btn(R, rotTotal()) + "</tr>" : '<tr><td colspan="7" class="vgr-empty">Nada no filtro.</td></tr>';
+    $("flu-chip-th").innerHTML = '<tr class="flu-grupos"><th rowspan="2">' + (porChip ? "Chip" : "Filial") + '</th><th colspan="2" class="g-ini">No período · ' + esc(PER.faixa) + '</th><th colspan="3" class="g-ini">Hoje</th><th rowspan="2"></th></tr>'
+      + '<tr><th class="num g-ini">' + esc(rotVenda()) + '</th><th class="num">Flutuante médio</th><th class="num g-ini">Estoque flutuante</th><th class="num">Estoque total</th><th class="num">Dias estimados</th></tr>';
+    $("flu-chip-tb").innerHTML = html;
+    $("flu-chip-cap").textContent = "clique na linha para abrir " + (porChip ? "as filiais do chip" : "os chips da filial") + " · o botão Detalhe › abre o detalhamento · flutuante médio = chips em trânsito em média por dia no período";
+    const todosAb = linhas.length && linhas.every((ln) => st.abertos.has(st.ver + ":" + ln.k));
+    $("flu-abre-todos").textContent = todosAb ? (porChip ? "Fechar todas as filiais" : "Fechar todos os chips") : (porChip ? "Abrir todas as filiais" : "Abrir todos os chips");
+    $("flu-abre-todos").dataset.fecha = todosAb ? "1" : "";
+    raiz.querySelectorAll("#flu-ver button").forEach((b) => b.classList.toggle("is-on", b.dataset.v === st.ver));
   }
 
-  // ---- composicao por grupo no periodo
-  function composicao(R, W) {
-    const G = ORDEM.filter((g) => E.some((e) => chipsG0(g)(e) > 0)), L = G.map((g) => ({ g, m: met(R, W.a, W.b, chipsG0(g), valorG0(g)), A: agora(R, chipsG0(g), valorG0(g)) })), tot = L.reduce((t, x) => t + x.m.fl, 0);
-    $("flu-comp-cap").textContent = "Estoque flutuante médio por grupo · " + W.rot + " · clique para filtrar";
-    $("flu-comp").innerHTML = L.length ? L.map((x) => '<div class="flu-comp-row' + (grupoTemSel(x.g) ? "" : " is-off") + '" data-g="' + esc(x.g) + '"><span class="flu-comp-nome">' + esc(x.g) + '</span><span class="flu-comp-val">' + NUM(x.m.fl) + " chips</span>"
-      + '<span class="flu-comp-bar"><span style="width:' + (tot ? 100 * x.m.fl / tot : 0).toFixed(1) + "%;background:" + COR[x.g] + '"></span></span>'
-      + '<span class="flu-comp-sub">' + (tot ? Math.round(100 * x.m.fl / tot) : 0) + "% do flutuante · " + BRL(x.m.flv) + " · agora " + NUM(x.A.q) + " chips · reposição " + (x.m.rep == null ? "—" : N1(x.m.rep) + " d") + "</span></div>").join("") : '<div class="vgr-empty">Sem envios.</div>';
-    $("flu-comp").querySelectorAll("[data-g]").forEach((x) => x.onclick = () => alterna("tipo", "g:" + x.dataset.g));
+  // ---- detalhe (botão "Detalhe ›"): os 5 números, o mês a mês, as contas, a divisão por filial/chip e as listas do que está em trânsito (sem nome de cliente)
+  const AGUARD = "Etiqueta emitida, não postado";
+  const sitCurta = (s) => s === AGUARD ? "Aguardando postagem" : s;
+  const tile = (eyebrow, valor, sub, cls) => '<div class="flu-det-tile' + (cls ? " " + cls : "") + '"><span class="eyebrow">' + esc(eyebrow) + '</span><span class="value">' + valor + '</span><span class="sub">' + sub + "</span></div>";
+  const conta = (rot, obs, v, res) => '<div class="flu-conta-l' + (res ? " is-res" : "") + '"><span>' + esc(rot) + (obs ? "<small>" + esc(obs) + "</small>" : "") + "</span><b>" + v + "</b></div>";
+  const tabelaHtml = (cab, linhas, vazio) => linhas.length ? '<div class="table-scroll"><table class="flu-tbl flu-tbl-fixa"><thead><tr>' + cab.map(([r, c]) => "<th" + (c ? ' class="' + c + '"' : "") + ">" + esc(r) + "</th>").join("")
+    + "</tr></thead><tbody>" + linhas.join("") + "</tbody></table></div>" : '<p class="flu-vazio">' + vazio + "</p>";
+  const secao = (tit, cap, corpo) => '<div class="flu-det-sec"><h4>' + esc(tit) + '<span class="cap">' + esc(cap) + "</span></h4>" + corpo + "</div>";
+  const diasDesde = (d) => d ? Math.max(0, H - dnum(d)) : null;
+  // um envio pode levar vários chips: junta as linhas pelo código de rastreio
+  function porEnvio(L) { const m = new Map(); for (const o of L) { const k = o.cod || o.ini + "|" + o.sit; let e = m.get(k); if (!e) { e = { ...o, q: 0, ps: [] }; m.set(k, e); } e.q += o.q; e.ps.push(o.p + " " + NUM(o.q)); }
+    return [...m.values()].sort((a, b) => a.ini.localeCompare(b.ini)); }
+  const linTransf = (o) => "<tr><td>" + DT(o.data) + "</td><td>" + esc(o.de + " → " + o.para) + "</td><td>" + esc(o.p) + '</td><td class="num">' + NUM(o.q) + '</td><td class="num">' + NUM(diasDesde(o.data)) + "</td></tr>";
+  const CAB_TRANSF = [["Transferido em"], ["De → para"], ["Chip"], ["Chips", "num"], ["Dias sem aceite", "num"]];
+  function detCorpo(L) {
+    const t = juntar(L), varios = t.prods.size > 1;
+    let h = '<div class="flu-det-tiles t5">' + tile(rotVenda(), NUM(t.media), esc((PER.um ? "chips vendidos · " : "chips por mês · média de ") + PER.faixa))
+      + tile("Flutuante médio", NUM(t.flm), esc("chips em trânsito por dia · " + PER.faixa))
+      + tile("Estoque flutuante hoje", NUM(t.flut), esc(partesFlut(t) || "nada em trânsito") + (t.qPar ? ' · <span class="flu-parado">' + NUM(t.qPar) + " parado, fora da conta</span>" : ""))
+      + tile("Estoque total hoje", NUM(t.total), esc(NUM(t.est) + " na filial + " + NUM(t.flut) + " flutuante"), "is-dest")
+      + tile("Dias estimados", t.dias == null ? "—" : NUM(t.dias), t.dia > 0 ? esc("dias de venda no ritmo de " + NUM(t.dia) + " chips/dia") : "sem venda no período") + "</div>";
+    const MM = MESES_VER.map((m) => { const a = iniMes(m), b = fimMes(m); let fl = 0; for (const x of L) fl += flutMed(x.iv, a, b); return { m, v: t.vm[m] || 0, fl }; });
+    const vmax = Math.max(1, ...MM.map((r) => r.v)), fmax = Math.max(1, ...MM.map((r) => r.fl)), barra = (v, mx, c) => '<td class="flu-bar-td"><span class="flu-bar' + c + '" style="width:' + (100 * v / mx).toFixed(1) + '%"></span></td>';
+    h += secao("Mês a mês", "em destaque, os meses do período · " + rotMes(MES_ATUAL) + " vai até hoje", tabelaHtml([["Mês"], ["Vendido", "num"], [""], ["Flutuante médio", "num"], [""]],
+      MM.map((r) => '<tr class="' + (PER.meses.includes(r.m) ? "is-per" : "") + '"><td>' + esc(rotMes(r.m)) + (r.m === MES_ATUAL ? " <small>até hoje</small>" : "") + '</td><td class="num">' + NUM(r.v) + "</td>" + barra(r.v, vmax, "") + '<td class="num">' + NUM(r.fl) + "</td>" + barra(r.fl, fmax, " is-fl") + "</tr>"), ""));
+    h += '<div class="flu-det-cards"><div class="flu-det-card"><h4>Estoque total hoje</h4>' + conta("Estoque na filial", "estoque atual do Mira", NUM(t.est)) + conta("+ chegando de outras filiais", "transferências sem aceite", NUM(t.qCheg))
+      + conta("+ a caminho dos clientes", "enviados pelos Correios, ainda não entregues", NUM(t.qCli)) + conta("= estoque total", "", NUM(t.total), true) + "</div>"
+      + '<div class="flu-det-card"><h4>Dias estimados</h4>' + conta("Vendido em " + PER.faixa, "", NUM(t.vend)) + conta("÷ dias do período", "", NUM(PER.nd))
+      + conta("= venda por dia", "", t.dia.toLocaleString("pt-BR", { maximumFractionDigits: 1 })) + conta("estoque total ÷ venda por dia", "", t.dias == null ? "—" : NUM(t.dias) + " dias", true) + "</div>"
+      + '<div class="flu-det-card"><h4>Fora da conta</h4>' + conta("Rastreio parado", "envio sem atualização dos Correios", NUM(t.qPar)) + conta("Enviado para outras filiais", "sem aceite; conta em quem recebe", NUM(qtd(t.sai)))
+      + '<p class="flu-conta-obs">O rastreio parado pode já ter sido entregue: o sistema dos Correios deixou de atualizar esses envios.</p></div></div>';
+    if (L.length > 1) { const cF = t.fils.size > 1, cP = t.prods.size > 1;
+      h += secao(!cP ? "Por filial" : !cF ? "Por chip" : "Por filial e chip", "", tabelaHtml((cF ? [["Filial"]] : []).concat(cP ? [["Chip"]] : []).concat([[rotVenda(), "num"], ["Flutuante médio", "num"], ["Estoque flutuante", "num"], ["Estoque total", "num"], ["Dias estimados", "num"]]),
+        L.map((x) => juntar([x])).sort((a, b) => b.media - a.media || b.est - a.est).map((u) => "<tr>" + (cF ? "<td>" + esc([...u.fils][0]) + "</td>" : "") + (cP ? "<td>" + esc([...u.prods][0]) + "</td>" : "")
+          + '<td class="num">' + NUM(u.media) + '</td><td class="num">' + NUM(u.flm) + '</td><td class="num">' + NUM(u.flut) + '</td><td class="num">' + NUM(u.total) + '</td><td class="num">' + fmtDias(u) + "</td></tr>"), "")); }
+    h += secao("Chegando de outras filiais", "transferências ainda sem aceite · " + NUM(t.qCheg) + " chips", tabelaHtml(CAB_TRANSF, t.cheg.slice().sort((a, b) => a.data.localeCompare(b.data)).map(linTransf), "Nenhuma transferência a caminho."));
+    const cl = porEnvio(t.cli), nAg = cl.filter((e) => e.sit === AGUARD).length;
+    const envCab = (ult) => [["Pedido em"], ["Situação"], [ult ? "Último evento" : "Postado em"], ["Dias desde o pedido", "num"], ["Chips", "num"]].concat(varios ? [["Chips do envio"]] : []).concat([["Rastreio"]]);
+    const envLin = (ult) => (e) => "<tr><td>" + DT(e.ini) + "</td><td>" + esc(sitCurta(e.sit)) + "</td><td>" + (DT(ult ? e.ult : e.pos) || "—") + '</td><td class="num">' + NUM(diasDesde(e.ini)) + '</td><td class="num">' + NUM(e.q) + "</td>"
+      + (varios ? '<td class="ps">' + esc(e.ps.join(" · ")) + "</td>" : "") + '<td style="font-family:var(--mono)">' + esc(e.cod || "—") + "</td></tr>";
+    h += secao("A caminho dos clientes", cl.length + (cl.length === 1 ? " envio" : " envios") + " · " + NUM(t.qCli) + " chips · " + nAg + " aguardando postagem (etiqueta emitida)", tabelaHtml(envCab(false), cl.map(envLin(false)), "Nenhum envio a caminho."));
+    const pa = porEnvio(t.par);
+    if (pa.length) h += secao("Rastreio parado (fora da conta)", pa.length + (pa.length === 1 ? " envio" : " envios") + " · " + NUM(t.qPar) + " chips · os Correios não atualizam mais", tabelaHtml(envCab(true), pa.map(envLin(true)), ""));
+    if (t.sai.length) h += secao("Enviado para outras filiais", "sem aceite ainda · conta no estoque de quem recebe", tabelaHtml(CAB_TRANSF, t.sai.slice().sort((a, b) => a.data.localeCompare(b.data)).map(linTransf), ""));
+    return { sub: esc((PER.um ? "venda de " : "venda média de ") + PER.faixa + " · estoque e trânsito de hoje"), html: h };
   }
+  // abre e fecha a janela (o foco volta para o botão que abriu)
+  let detOrigem = null;
+  const detAberto = () => !$("flu-det-modal").classList.contains("is-hidden");
+  function abreDetalhe(L, titulo, origem) {
+    if (!L || !L.length) return;
+    escondeTip(); msFecha(); detOrigem = origem || null;
+    const d = detCorpo(L); $("flu-det-volta").hidden = true; $("flu-det-tit").textContent = titulo; $("flu-det-sub").innerHTML = d.sub; $("flu-det-corpo").innerHTML = d.html;
+    $("flu-det-modal").classList.remove("is-hidden"); $("flu-det-modal").querySelector(".flu-det").scrollTop = 0; $("flu-det-x").focus();
+  }
+  function fechaDetalhe() { if (!detAberto()) return; $("flu-det-modal").classList.add("is-hidden"); if (detOrigem && detOrigem.isConnected) detOrigem.focus(); detOrigem = null; }
 
-  // ---- por produto: um cartao por grupo (como no BI Comercial)
-  function porProduto(R, W) {
-    const G = ORDEM.filter((g) => R.some((e) => chipsG0(g)(e) > 0));
-    $("flu-prod").innerHTML = G.map((g) => {
-      const soma = new Map(); for (const e of R) for (const p in e.p) if (grupoDe(p) === g && valeOp(p)) soma.set(p, (soma.get(p) || 0) + e.p[p]);
-      const L = [...soma.keys()].map((p) => ({ p, m: met(R, W.a, W.b, chipsP0(p), valorP0(p)), A: agora(R, chipsP0(p), valorP0(p)) })).filter((x) => x.m.fl >= 0.5 || x.A.q > 0 || x.m.eq > 0).sort((a, b) => b.m.fl - a.m.fl);
-      const tm = met(R, W.a, W.b, chipsG0(g), valorG0(g));
-      return '<div class="vgr-card' + (grupoTemSel(g) ? "" : " flu-dim") + '"><div class="flu-ph" style="background:' + COR[g] + '" data-g="' + esc(g) + '" title="Filtrar pelo grupo"><span>' + esc(g) + "</span><small>" + NUM(tm.fl) + " chips · " + BRL(tm.flv) + "</small></div>"
-        + '<div class="table-scroll"><table class="flu-tbl"><thead><tr><th>Produto</th><th class="num" title="Estoque flutuante médio no período (chips)">Flutuante</th><th class="num" title="Chips a caminho agora">Agora</th><th class="num" title="Demanda entregue (chips por dia)">Dem./dia</th><th class="num" title="Tempo de reposição (dias do pedido à entrega)">Repos.</th></tr></thead><tbody>'
-        + L.map((x) => '<tr data-p="' + esc(x.p) + '" class="' + (st.tipo.includes("p:" + x.p) ? "is-sel" : st.tipo.length && !prodSel(x.p) ? "is-dim" : "") + '"><td class="nome">' + esc(x.p) + '</td><td class="num"><b>' + NUM(x.m.fl) + '</b></td><td class="num">' + NUM(x.A.q) + '</td><td class="num">' + N1(x.m.dem) + '</td><td class="num">' + (x.m.rep == null ? "—" : N1(x.m.rep) + " d") + "</td></tr>").join("")
-        + '</tbody></table></div><p class="flu-pnota">Flutuante = chips a caminho em média por dia · ' + esc(W.rot) + " · clique em um ou mais produtos para filtrar</p></div>";
-    }).join("");
-    $("flu-prod").querySelectorAll("tr[data-p]").forEach((tr) => tr.onclick = () => alterna("tipo", "p:" + tr.dataset.p));
-    $("flu-prod").querySelectorAll(".flu-ph").forEach((h) => h.onclick = () => alterna("tipo", "g:" + h.dataset.g));
-  }
-
-  // ---- chip a chip por filial: cada produto numa linha (sem grupo), uma coluna por filial. O filtro de produto so destaca
-  // as linhas e o de filial so destaca as colunas (nada some ao clicar); os demais filtros do topo valem normalmente.
-  const CHM = { fl: ["Flutuante médio", "Estoque flutuante médio (chips)"], ag: ["A caminho agora", "Chips a caminho agora"], eq: ["Entregues no período", "Chips entregues no período"] };
-  let ultimoChip = [];
-  function chipAChip(W) {
-    const m = st.chm, R = recorte(), RF = recorte("fil"), porF = new Map();
-    for (const e of RF) { const k = e.fil || "(sem filial)"; (porF.get(k) || porF.set(k, []).get(k)).push(e); }
-    const mede = (L, w, wv) => { const x = met(L, W.a, W.b, w, wv), y = agora(L, w, wv); return { fl: x.fl, flv: x.flv, ag: y.q, agv: y.v, eq: x.eq, dem: x.dem, rep: x.rep }; };
-    const tem = (x) => x.fl >= 0.5 || x.ag > 0 || x.eq > 0;
-    const soma = new Map(); for (const e of RF) for (const p in e.p) if (valeOp(p)) soma.set(p, (soma.get(p) || 0) + e.p[p]);
-    const F0 = [...porF.keys()].sort((a, b) => a.localeCompare(b, "pt-BR"));
-    const L = [...soma.keys()].map((p) => ({ p, t: mede(R, chipsP0(p), valorP0(p)), f: F0.map((k) => mede(porF.get(k), chipsP0(p), valorP0(p))) })).filter((x) => x.f.some(tem));
-    // filiais sem nada na metrica escolhida saem; ordem = maior total da metrica
-    const totF = F0.map((k, i) => L.reduce((s, x) => s + x.f[i][m], 0));
-    const idx = F0.map((_, i) => i).filter((i) => totF[i] >= 0.5).sort((a, b) => totF[b] - totF[a]);
-    L.sort((a, b) => b.t[m] - a.t[m] || b.t.fl - a.t.fl || a.p.localeCompare(b.p, "pt-BR"));
-    const outras = ["fl", "ag", "eq"].filter((k) => k !== m);
-    const fmt = (k, v) => k === "fl" ? (v >= 0.5 ? NUM(v) : "") : (v > 0 ? NUM(v) : "");
-    const vazio = '<span style="color:var(--text-faint)">—</span>';
-    const maxC = Math.max(1, ...L.flatMap((x) => idx.map((i) => x.f[i][m])));
-    const filOff = (k) => st.fil.length > 0 && !st.fil.includes(k);
-    const capM = m === "ag" ? CHM.ag[1] + " (hoje)" : CHM[m][1] + " · " + W.rot;
-    $("flu-chip-cap").innerHTML = esc(capM) + " · cada chip separado, sem agrupar · os filtros do topo valem aqui · clique em um ou mais chips (linhas) ou filiais (colunas) para filtrar · passe o mouse numa célula para ver todos os números";
-    $("flu-chip-th").innerHTML = '<tr><th>Chip</th><th class="num tot">' + esc(CHM[m][0]) + " · total</th>"
-      + idx.map((i) => '<th class="num fil' + (st.fil.includes(F0[i]) ? " is-sel" : "") + (filOff(F0[i]) ? " c-dim" : "") + '" data-f="' + esc(F0[i]) + '" title="Filtrar pela filial">' + esc(F0[i]) + "</th>").join("")
-      + outras.map((k) => '<th class="num">' + esc(CHM[k][0]) + "</th>").join("")
-      + '<th class="num">Demanda (chips/dia)</th><th class="num">Reposição (dias)</th><th class="num">' + (m === "ag" ? "Valor a caminho agora" : "Valor em trânsito (médio)") + "</th></tr>";
-    const dica = (p, k, x) => "<b>" + esc(p) + "</b> · " + esc(k) + "<br>Flutuante médio: <b>" + NUM(x.fl) + " chips</b> · " + BRL(x.flv) + "<br>A caminho agora: " + NUM(x.ag) + " chips · " + BRL(x.agv)
-      + "<br>Entregues no período: " + NUM(x.eq) + " chips (" + N1(x.dem) + " por dia)<br>Reposição: " + (x.rep == null ? "—" : N1(x.rep) + " dias");
-    const cel = (p, k, x) => { const v = x[m], a = Math.round(8 + 42 * v / maxC), txt = fmt(m, v);
-      return '<td class="num' + (filOff(k) ? " c-dim" : "") + '" data-tip="' + esc(dica(p, k, x)) + '" style="background:color-mix(in srgb, var(--accent) ' + (txt ? a : 0) + '%, transparent)">' + (txt || vazio) + "</td>"; };
-    const resto = (x) => outras.map((k) => '<td class="num">' + (fmt(k, x[k]) || vazio) + "</td>").join("") + '<td class="num">' + (x.dem > 0 ? N1(x.dem) : vazio) + '</td><td class="num">' + (x.rep == null ? vazio : N1(x.rep)) + '</td><td class="num">' + BRL(m === "ag" ? x.agv : x.flv) + "</td>";
-    const T = mede(R, chips, valor), TF = F0.map((k) => mede(porF.get(k), chips, valor));
-    $("flu-chip-tb").innerHTML = L.length ? L.map((x) => '<tr data-p="' + esc(x.p) + '" class="' + (st.tipo.includes("p:" + x.p) ? "is-sel" : st.tipo.length && !prodSel(x.p) ? "is-dim" : "") + '"><td class="nome">' + esc(x.p) + '</td><td class="num tot"><b>' + (fmt(m, x.t[m]) || vazio) + "</b></td>"
-        + idx.map((i) => cel(x.p, F0[i], x.f[i])).join("") + resto(x.t) + "</tr>").join("")
-      + '<tr class="is-tot"><td>' + (st.tipo.length ? "Total dos chips selecionados" : "Total") + '</td><td class="num tot">' + (fmt(m, T[m]) || "—") + "</td>" + idx.map((i) => '<td class="num' + (filOff(F0[i]) ? " c-dim" : "") + '">' + (fmt(m, TF[i][m]) || "—") + "</td>").join("") + resto(T).split(vazio).join("—") + "</tr>"
-      : '<tr><td colspan="7" class="vgr-empty">Sem envios no recorte.</td></tr>';
-    $("flu-chip-tb").querySelectorAll("tr[data-p]").forEach((tr) => tr.onclick = () => alterna("tipo", "p:" + tr.dataset.p));
-    $("flu-chip-th").querySelectorAll("th[data-f]").forEach((th) => th.onclick = () => alterna("fil", th.dataset.f));
-    wireVgrTooltips($("flu-chip-tb"));
-    document.querySelectorAll("#flu-chm button").forEach((b) => b.classList.toggle("is-on", b.dataset.m === m));
-    // Excel: uma linha por chip e filial (o que os filtros deixam), com todas as metricas
-    const r1 = (v) => Math.round(v * 10) / 10;
-    ultimoChip = L.filter((x) => prodSel(x.p)).flatMap((x) => F0.map((k, i) => [x, k, x.f[i]]).filter(([, k, y]) => !filOff(k) && tem(y)))
-      .map(([x, k, y]) => [W.longo, x.p, operadoraDe(x.p), k, r1(y.fl), Math.round(y.flv), y.ag, Math.round(y.agv), y.eq, r1(y.dem), y.rep == null ? "" : r1(y.rep)]);
-  }
-
-  function render() {
-    const W = janela(), R = recorte();
-    ativos(); kpis(R, W); evolucao(R); composicao(R, W); porProduto(R, W); chipAChip(W);
-    document.querySelectorAll("#flu-pergr button").forEach((b) => b.classList.toggle("is-on", b.dataset.per === st.per));
-  }
-  // ---- eventos
-  [["flu-per", "sel"], ["flu-fil", "fil"], ["flu-tipo", "tipo"], ["flu-op", "op"]].forEach(([id, k]) => $(id).onchange = (ev) => { const v = ev.target.value; if (v === "__varios") return; st[k] = MULTI.includes(k) ? (v ? [v] : []) : v; sincroniza(); render(); });
-  $("flu-limpa").onclick = () => { Object.keys(ROT_F).forEach((k) => st[k] = MULTI.includes(k) ? [] : ""); sincroniza(); render(); };
-  document.querySelectorAll("#flu-pergr button").forEach((b) => b.onclick = () => { if (st.per === b.dataset.per) return; st.per = b.dataset.per; st.sel = ""; montaFiltros(); render(); });
-  document.querySelectorAll("#flu-chm button").forEach((b) => b.onclick = () => { st.chm = b.dataset.m; render(); });
-  $("flu-xls-chip").onclick = () => exportarExcel(["Período", "Chip", "Operadora", "Filial", "Flutuante médio (chips)", "Valor em trânsito médio (R$)", "A caminho agora (chips)", "Valor a caminho agora (R$)", "Entregues no período (chips)", "Demanda (chips/dia)", "Reposição (dias)"],
-    ultimoChip, $("flu-xls-chip-st"), "estoque_flutuante_chip_a_chip");
-  $("flu-fonte").textContent = E.length ? "Fonte: rastreio dos Correios do BI Operacional (envios com pedido do Mira desde " + DT(diso(INI)) + "), atualizado em " + (D.meta.rastreioGeradoEm ? new Date(D.meta.rastreioGeradoEm).toLocaleString("pt-BR", { day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" }) : "—") + "." : "Sem dados de rastreio ainda.";
-  $("flu-nota").innerHTML = "Como ler: <b>estoque flutuante médio</b> = chips a caminho em média por dia no período (cada envio conta do dia do pedido no Mira até a véspera da entrega; em aberto e com rastreio em dia, até hoje; devolvido, etiqueta expirada ou rastreio desatualizado, até o último evento dos Correios) · "
-    + "<b>demanda</b> = chips entregues por dia · <b>tempo de reposição</b> = dias do pedido à entrega, ponderado por chips (pela lei de Little, flutuante ≈ demanda × reposição) · <b>valor</b> = valor dos itens no pedido do Mira · "
-    + "grupos de produto como no BI Comercial (Combo e e-SIM juntos) · "
-    + "só envios pelos Correios com pedido do Mira (LATAM, J&amp;T e retiradas não entram) · o banco dos Correios só tem histórico desde 23/04/2026.";
-  montaFiltros();
+  function render() { PER = PERIODOS.find((p) => p.k === st.per) || PERIODOS[0]; $("flu-per").value = PER.k; DET = []; ativos(); MULTI.forEach(msPinta); const R = recorte(); kpis(R); tabela(R); }
+  // ---- eventos: "Detalhe ›" abre a janela; clique (ou Enter/Espaço) na linha principal abre/fecha os itens dela
+  const alternaLinha = (k) => { const c = st.ver + ":" + k; if (st.abertos.has(c)) st.abertos.delete(c); else st.abertos.add(c); render();
+    const n = [...raiz.querySelectorAll("tr[data-abre]")].find((tr) => tr.dataset.abre === k); if (n) n.focus(); };
+  raiz.addEventListener("click", (ev) => {
+    const b = ev.target.closest("[data-det]"); if (b && raiz.contains(b)) { const d = DET[+b.dataset.det]; if (d) abreDetalhe(d.L, d.titulo, b); return; }
+    const tr = ev.target.closest("tr[data-abre]"); if (tr && raiz.contains(tr)) alternaLinha(tr.dataset.abre); });
+  raiz.addEventListener("keydown", (ev) => { if ((ev.key === "Enter" || ev.key === " ") && ev.target.matches && ev.target.matches("tr[data-abre]")) { ev.preventDefault(); alternaLinha(ev.target.dataset.abre); } });
+  $("flu-per").onchange = (ev) => { st.per = ev.target.value; render(); };
+  raiz.querySelectorAll("#flu-ver button").forEach((b) => b.onclick = () => { if (st.ver === b.dataset.v) return; st.ver = b.dataset.v; render(); });
+  $("flu-abre-todos").onclick = () => { const fecha = $("flu-abre-todos").dataset.fecha === "1"; for (const ln of ultimas) { const k = st.ver + ":" + ln.k; if (fecha) st.abertos.delete(k); else st.abertos.add(k); } render(); };
+  $("flu-limpa").onclick = limpa;
+  $("flu-xls-chip").onclick = () => {
+    const R = recorte().slice().sort((a, b) => a.fil.localeCompare(b.fil, "pt-BR") || a.p.localeCompare(b.p, "pt-BR")), r1 = (v) => Math.round(v * 10) / 10;
+    const linhas = R.map((x) => { const t = juntar([x]); return [PER.faixa, x.fil, x.p, x.op, x.g, r1(t.media), r1(t.flm), t.est, t.qCheg, t.qCli, t.flut, t.total, t.dias == null ? "" : Math.round(t.dias), t.qPar].concat(MESES_VER.map((m) => t.vm[m] || 0)); });
+    exportarExcel(["Período", "Filial", "Chip", "Operadora", "Grupo", rotVenda() + " (período)", "Flutuante médio (período, chips/dia)", "Estoque na filial (hoje)", "Chegando de outras filiais (hoje)", "A caminho dos clientes (hoje)", "Estoque flutuante (hoje)", "Estoque total (hoje)", "Dias estimados", "Rastreio parado (fora da conta)"]
+      .concat(MESES_VER.map((m) => "Vendido em " + rotMes(m) + (m === MES_ATUAL ? " (até hoje)" : ""))), linhas, $("flu-xls-chip-st"), "estoque_flutuante_" + PER.k);
+  };
+  // janela: fechar (✕, botão, clique fora, Esc) e foco preso dentro dela
+  const modal = $("flu-det-modal");
+  $("flu-det-x").onclick = fechaDetalhe; $("flu-det-fecha").onclick = fechaDetalhe;
+  modal.addEventListener("mousedown", (ev) => { if (ev.target === modal) fechaDetalhe(); });
+  modal.addEventListener("keydown", (ev) => { if (ev.key !== "Tab") return; const f = [...modal.querySelectorAll("button, [tabindex]")].filter((e) => e.offsetParent !== null); if (!f.length) return;
+    const pri = f[0], ult = f[f.length - 1], at = document.activeElement;
+    if (ev.shiftKey && at === pri) { ev.preventDefault(); ult.focus(); } else if (!ev.shiftKey && at === ult) { ev.preventDefault(); pri.focus(); } });
+  document.addEventListener("keydown", (ev) => { if (ev.key !== "Escape") return;
+    if (detAberto()) fechaDetalhe(); else if (msAberto) { const b = caixaDe(msAberto).querySelector(".flu-ms-btn"); msFecha(); b.focus(); } });
+  const quando = (v) => v ? new Date(v).toLocaleString("pt-BR", { day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" }) : "—";
+  $("flu-fonte").textContent = "Fontes: estoque e vendas do BI (Mira), transferências da aba Transferências e rastreio dos Correios do BI Operacional (atualizado em " + quando(D.meta.rastreioGeradoEm) + ").";
+  $("flu-nota").innerHTML = "Como ler: o <b>período</b> vale para a venda e o flutuante médio; o estoque é sempre o de hoje · <b>venda média mensal</b> = chips vendidos no período ÷ meses do período · "
+    + "<b>flutuante médio</b> = chips em trânsito em média por dia no período (transferência: do envio até o aceite; cliente: do pedido no Mira até a entrega) · "
+    + "<b>estoque flutuante</b> (hoje) = chegando de outras filiais (transferência sem aceite; conta na filial que recebe) + a caminho dos clientes (pedido do Mira enviado pelos Correios e ainda não entregue, inclusive etiqueta emitida e não postada; conta na filial que enviou) · "
+    + "envio com o <b>rastreio parado</b> (Correios sem atualização há mais de 2 dias) fica fora da conta e aparece no detalhe · <b>estoque total</b> = estoque na filial + flutuante · "
+    + "<b>dias estimados</b> = estoque total ÷ venda por dia no período · o rastreio dos Correios só tem histórico desde " + DT(D.meta.inicio || "") + " · só chips (serviços como Controle e Pós ficam fora).";
+  montaPeriodo(); msMonta();
   window.renderEstoqueFlutuante = render;
   render();
 })();
